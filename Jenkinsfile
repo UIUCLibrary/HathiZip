@@ -9,6 +9,7 @@ pipeline {
     }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "HathiTrust Zip for Submit", description: "Name given to the project")
+        choice(choices: 'Windowstest\nWindows', description: "Jenkins build node label requirement.", name: "windowsLabel")
         booleanParam(name: "UNIT_TESTS", defaultValue: true, description: "Run automated unit tests")
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
@@ -16,7 +17,7 @@ pipeline {
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "hathi_zip", description: 'The directory that the docs should be saved under')
-        choice(choices: 'Windowstest\nWindows', description: "Jenkins build node label requirement.", name: "windowsLabel")
+
     }
     stages {
 
@@ -43,7 +44,7 @@ pipeline {
                                 runner.env = "pytest"
                                 runner.windows = true
                                 runner.stash = "Source"
-                                runner.label = "Windowstest"
+                                runner.label = "${params.windowsLabel}"
                                 runner.post = {
                                     junit 'reports/junit-*.xml'
                                 }
@@ -117,7 +118,7 @@ pipeline {
             steps {
                 parallel(
                         "Windows Wheel": {
-                            node(label: "Windowstest") {
+                            node(label: "${params.windowsLabel}") {
                                 deleteDir()
                                 unstash "Source"
                                 bat """${tool 'Python3.6.3_Win64'} -m venv .env
@@ -130,7 +131,7 @@ pipeline {
                             }
                         },
                         "Windows CX_Freeze MSI": {
-                            node(label: "Windowstest") {
+                            node(label: "${params.windowsLabel}") {
                                 deleteDir()
                                 unstash "Source"
                                 bat """${tool 'Python3.6.3_Win64'} -m venv .env
@@ -145,7 +146,7 @@ pipeline {
                                 }
 
                             }
-                            node(label: "Windowstest") {
+                            node(label: "${params.windowsLabel}") {
                                 deleteDir()
                                 git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
                                 unstash "msi"
@@ -201,36 +202,36 @@ pipeline {
                 }
             }
         }
-        stage("Deploying to Devpi") {
-            agent {
-                node {
-                    label 'Windows&&DevPi'
-                }
-            }
-            when {
-                expression { params.DEPLOY_DEVPI == true }
-            }
-            steps {
-                deleteDir()
-                unstash "Source"
-                bat "devpi use http://devpy.library.illinois.edu"
-                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}"
-                    script {
-                        try{
-                            bat "devpi upload --with-docs"
-
-                        } catch (exc) {
-                            echo "Unable to upload to devpi with docs. Trying without"
-                            bat "devpi upload"
-                        }
-                    }
-                    bat "devpi test HathiZip"
-                }
-
-            }
-        }
+//        stage("Deploying to Devpi") {
+//            agent {
+//                node {
+//                    label 'Windows&&DevPi'
+//                }
+//            }
+//            when {
+//                expression { params.DEPLOY_DEVPI == true }
+//            }
+//            steps {
+//                deleteDir()
+//                unstash "Source"
+//                bat "devpi use http://devpy.library.illinois.edu"
+//                withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
+//                    bat "devpi login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
+//                    bat "devpi use /${DEVPI_USERNAME}/${env.BRANCH_NAME}"
+//                    script {
+//                        try{
+//                            bat "devpi upload --with-docs"
+//
+//                        } catch (exc) {
+//                            echo "Unable to upload to devpi with docs. Trying without"
+//                            bat "devpi upload"
+//                        }
+//                    }
+//                    bat "devpi test HathiZip"
+//                }
+//
+//            }
+//        }
         stage("Update online documentation") {
             agent {
                 label "Linux"
