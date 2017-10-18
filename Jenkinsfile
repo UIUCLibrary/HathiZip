@@ -13,7 +13,7 @@ pipeline {
         booleanParam(name: "ADDITIONAL_TESTS", defaultValue: true, description: "Run additional tests")
         booleanParam(name: "PACKAGE", defaultValue: true, description: "Create a package")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Create SCCM deployment package")
-        booleanParam(name: "DEPLOY_DEVPI", defaultValue: true, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
+        booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on http://devpy.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
         string(name: 'URL_SUBFOLDER', defaultValue: "hathi_zip", description: 'The directory that the docs should be saved under')
     }
@@ -42,7 +42,7 @@ pipeline {
                                 runner.env = "pytest"
                                 runner.windows = true
                                 runner.stash = "Source"
-                                runner.label = "Windows"
+                                runner.label = "Windowstest"
                                 runner.post = {
                                     junit 'reports/junit-*.xml'
                                 }
@@ -116,7 +116,7 @@ pipeline {
             steps {
                 parallel(
                         "Windows Wheel": {
-                            node(label: "Windows") {
+                            node(label: "Windowstest") {
                                 deleteDir()
                                 unstash "Source"
                                 bat """${tool 'Python3.6.3_Win64'} -m venv .env
@@ -129,7 +129,7 @@ pipeline {
                             }
                         },
                         "Windows CX_Freeze MSI": {
-                            node(label: "Windows") {
+                            node(label: "Windowstest") {
                                 deleteDir()
                                 unstash "Source"
                                 bat """${tool 'Python3.6.3_Win64'} -m venv .env
@@ -144,7 +144,7 @@ pipeline {
                                 }
 
                             }
-                            node(label: "Windows") {
+                            node(label: "Windowstest") {
                                 deleteDir()
                                 git url: 'https://github.com/UIUCLibrary/ValidateMSI.git'
                                 unstash "msi"
