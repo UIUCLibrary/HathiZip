@@ -77,6 +77,7 @@ pipeline {
                         success{
                             dir("source"){
                                 stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
+                                archiveArtifacts artifacts: "HathiZip.dist-info/**"
                                 stash includes: 'deployment.yml', name: "Deployment"
                             }
                         }
