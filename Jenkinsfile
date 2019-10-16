@@ -137,9 +137,6 @@ pipeline {
                     }
                 }
                 stage("Building Sphinx Documentation"){
-                    environment{
-                        DOC_ZIP_FILENAME = "hathizip-docs.zip"
-                    }
                     steps {
                         echo "Building docs on ${env.NODE_NAME}"
                         bat "${WORKSPACE}\\venv\\Scripts\\sphinx-build.exe source/docs/source build/docs/html -d build/docs/.doctrees -v -w ${WORKSPACE}\\logs\\build_sphinx.log"
@@ -151,8 +148,13 @@ pipeline {
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${env.DOC_ZIP_FILENAME}"
-                            stash includes: "dist/${env.DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            unstash "DIST-INFO"
+                            script{
+                                def props = readProperties interpolate: true, file: 'HathiZip.dist-info/METADATA'
+                                def DOC_ZIP_FILENAME = "${props.Name.}-${props.version}.doc.zip"
+                                zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
+                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
+                            }
                         }
                         failure{
                             echo "Failed to build Python package"
@@ -161,7 +163,7 @@ pipeline {
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: "dist/${env.DOC_ZIP_FILENAME}", type: 'INCLUDE'],
+                                    [pattern: "dist/*.doc.zip", type: 'INCLUDE'],
                                     [pattern: 'build/docs/html/**"', type: 'INCLUDE']
                                     ]
                             )
