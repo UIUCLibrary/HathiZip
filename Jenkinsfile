@@ -117,7 +117,7 @@ pipeline {
                 stage("Python Package"){
                     steps {
                         dir("source"){
-                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build  | tee ${WORKSPACE}\\logs\\build.log"
+                            powershell "& ${WORKSPACE}\\venv\\Scripts\\python.exe setup.py build -b ${WORKSPACE}\\build dist_info  | tee ${WORKSPACE}\\logs\\build.log"
                         }
                     }
                     post{
@@ -127,6 +127,11 @@ pipeline {
                                     ]
                                 )
                             archiveArtifacts artifacts: "logs/build.log"
+                        }
+                        success{
+                            dir("source"){
+                                stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
+                            }
                         }
                     }
                 }
