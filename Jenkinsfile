@@ -152,7 +152,7 @@ pipeline {
                             unstash "DIST-INFO"
                             script{
                                 def props = readProperties interpolate: true, file: 'HathiZip.dist-info/METADATA'
-                                def DOC_ZIP_FILENAME = "${props.Name}-${props.version}.doc.zip"
+                                def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
                                 zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                                 stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
                             }
