@@ -27,15 +27,11 @@ pipeline {
         timeout(60)  // Timeout after 60 minutes. This shouldn't take this long but it hangs for some reason
         checkoutToSubdirectory("source")
     }
-    environment {
-        //PATH = "${tool 'CPython-3.6'};${tool 'CPython-3.7'};$PATH"
-//        PKG_NAME = pythonPackageName(toolName: "CPython-3.6")
-//        PKG_VERSION = pythonPackageVersion(toolName: "CPython-3.6")
-
-        DEVPI = credentials("DS_devpi")
-        mypy_args = "--junit-xml=mypy.xml"
-        pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
-    }
+//    environment {
+////        DEVPI = credentials("DS_devpi")
+////        mypy_args = "--junit-xml=mypy.xml"
+////        pytest_args = "--junitxml=reports/junit-{env:OS:UNKNOWN_OS}-{envname}.xml --junit-prefix={env:OS:UNKNOWN_OS}  --basetemp={envtmpdir}"
+//    }
     triggers {
         cron('@daily')
     }
@@ -369,6 +365,7 @@ pipeline {
             }
             environment{
                 PATH = "${WORKSPACE}\\venv\\Scripts;${tool 'CPython-3.6'};${tool 'CPython-3.6'}\\Scripts;${PATH}"
+                DEVPI = credentials("DS_devpi")
             }
 
             stages{
@@ -532,10 +529,7 @@ pipeline {
                         script {
                             def props = readProperties interpolate: true, file: 'HathiZip.dist-info/METADATA'
                             input "Release ${props.Name} ${props.Version} to DevPi Production?"
-                            withCredentials([usernamePassword(credentialsId: 'DS_devpi', usernameVariable: 'DEVPI_USERNAME', passwordVariable: 'DEVPI_PASSWORD')]) {
-                                bat "venv\\Scripts\\devpi.exe login ${DEVPI_USERNAME} --password ${DEVPI_PASSWORD}"
-                            }
-
+                            bat "venv\\Scripts\\devpi.exe login ${env.DEVPI_USR} --password ${env.DEVPI_PSW}"
                             bat "venv\\Scripts\\devpi.exe use /DS_Jenkins/${env.BRANCH_NAME}_staging"
                             bat "venv\\Scripts\\devpi.exe push ${props.Name}==${props.Version} production/release"
                         }
