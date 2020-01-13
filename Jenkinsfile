@@ -421,6 +421,7 @@ pipeline {
                         equals expected: "dev", actual: env.BRANCH_NAME
                     }
                 }
+                beforeAgent true
             }
             options{
                 timestamps()
@@ -641,6 +642,7 @@ pipeline {
                     equals expected: true, actual: params.DEPLOY_SCCM
                     branch "master"
                 }
+                beforeAgent true
             }
             agent{
                 label "linux"
