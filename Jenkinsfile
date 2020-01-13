@@ -403,7 +403,15 @@ pipeline {
                             archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
                             }
                         cleanup{
-                            bat "del dist\\*.msi"
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
