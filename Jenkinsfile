@@ -48,51 +48,31 @@ pipeline {
         string(name: 'URL_SUBFOLDER', defaultValue: "hathi_zip", description: 'The directory that the docs should be saved under')
     }
     stages {
-        stage("Configure") {
+        stage("Stashing important files for later"){
             agent {
-              dockerfile {
-                filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
-                label "windows && docker"
-              }
-            }
-            stages{
-                stage("Stashing important files for later"){
-                    steps{
-                        bat "python setup.py dist_info"
-                    }
-                    post{
-                        success{
-                            stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
-                            archiveArtifacts artifacts: "HathiZip.dist-info/**"
-                            stash includes: 'deployment.yml', name: "Deployment"
-                        }
-                    }
+                dockerfile {
+                    filename 'ci/docker/python37/windows/build/msvc/Dockerfile'
+                    label "windows && docker"
                 }
-                //stage("Creating virtualenv for building"){
-                //    steps{
-                //        bat "python -m venv venv"
-                //        script {
-                //            try {
-                //                bat "call venv\\Scripts\\python.exe -m pip install -U pip>=18.0"
-                //            }
-                //            catch (exc) {
-                //                bat "python -m venv venv"
-                //                bat "call venv\\Scripts\\python.exe -m pip install -U pip>=18.0 --no-cache-dir"
-                //            }
-                //        }
-                //        bat 'venv\\Scripts\\pip.exe install "tox>=3.8.2,<3.10" mypy lxml pytest pytest-cov flake8 sphinx wheel --upgrade-strategy only-if-needed'
-                //    }
-                //    post{
-                //        success{
-                //            bat "(if not exist logs mkdir logs) && venv\\Scripts\\pip.exe list > logs\\pippackages_venv_${NODE_NAME}.log"
-                //            archiveArtifacts artifacts: "logs/pippackages_venv_${NODE_NAME}.log"
-                //        }
-                //    }
-                //}
+            }
+            steps{
+                bat "python setup.py dist_info"
             }
             post{
-                failure {
-                    deleteDir()
+                success{
+                    stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
+                    archiveArtifacts artifacts: "HathiZip.dist-info/**"
+                    stash includes: 'deployment.yml', name: "Deployment"
+                }
+                cleanup{
+                    cleanWs(
+                        deleteDirs: true,
+                        patterns: [
+                            [pattern: "dist/", type: 'INCLUDE'],
+                            [pattern: "HathiZip.dist-info/", type: 'INCLUDE'],
+                            [pattern: 'build/', type: 'INCLUDE']
+                        ]
+                    )
                 }
             }
         }
@@ -117,6 +97,15 @@ pipeline {
                                     ]
                                 )
                             archiveArtifacts artifacts: "logs/build.log"
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE']
+                                ]
+                            )
                         }
 
                     }
@@ -147,9 +136,9 @@ pipeline {
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: "dist/*.doc.zip", type: 'INCLUDE'],
-                                    [pattern: 'build/docs/html/**"', type: 'INCLUDE']
-                                    ]
+                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE']
+                                ]
                             )
                         }
                     }
@@ -198,6 +187,48 @@ pipeline {
                     }
                     steps{
                         bat "python -m sphinx -b doctest docs\\source build\\docs -d build\\docs\\doctrees -v"
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                    deleteDirs: true,
+                                    patterns: [
+                                        [pattern: 'build/', type: 'INCLUDE'],
+                                        [pattern: 'dist/', type: 'INCLUDE'],
+                                        [pattern: 'logs/', type: 'INCLUDE'],
+                                        [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                    ]
+                                )
+                            //cleanWs(
+                            //    deleteDirs: true,
+                            //    patterns: [
+                            //        [pattern: 'ci/', type: 'EXCLUDE'],
+                            //        [pattern: 'docs/', type: 'EXCLUDE'],
+                            //        [pattern: 'hathizip/', type: 'EXCLUDE'],
+                            //        [pattern: 'tests/', type: 'EXCLUDE'],
+                            //        [pattern: '.git/', type: 'EXCLUDE'],
+                            //        [pattern: '.gitignore', type: 'EXCLUDE'],
+                            //        [pattern: '.travis.yml', type: 'EXCLUDE'],
+                            //        [pattern: 'CHANGELOG.rst', type: 'EXCLUDE'],
+                            //        [pattern: 'cx_setup.py', type: 'EXCLUDE'],
+                            //        [pattern: 'deployment.yml', type: 'EXCLUDE'],
+                            //        [pattern: 'documentation.url', type: 'EXCLUDE'],
+                            //        [pattern: 'Jenkinsfile', type: 'EXCLUDE'],
+                            //        [pattern: 'LICENSE', type: 'EXCLUDE'],
+                            //        [pattern: 'make.bat', type: 'EXCLUDE'],
+                            //        [pattern: 'MANIFEST.in', type: 'EXCLUDE'],
+                            //        [pattern: 'Pipfile', type: 'EXCLUDE'],
+                            //        [pattern: 'Pipfile.lock', type: 'EXCLUDE'],
+                            //        [pattern: 'README.rst', type: 'EXCLUDE'],
+                            //        [pattern: 'requirements.txt', type: 'EXCLUDE'],
+                            //        [pattern: 'requirements-dev.txt', type: 'EXCLUDE'],
+                            //        [pattern: 'requirements-freeze.txt', type: 'EXCLUDE'],
+                            //        [pattern: 'setup.cfg', type: 'EXCLUDE'],
+                            //        [pattern: 'setup.py', type: 'EXCLUDE'],
+                            //        [pattern: 'tox.ini', type: 'EXCLUDE']
+                            //    ]
+                            //)
+                        }
                     }
 
                 }
@@ -253,7 +284,15 @@ pipeline {
                             recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
                         }
                         cleanup{
-                            cleanWs(patterns: [[pattern: 'logs/flake8.log', type: 'INCLUDE']])
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
@@ -332,6 +371,17 @@ pipeline {
                         success{
                             archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
                             stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "dist"
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
