@@ -340,15 +340,10 @@ pipeline {
                         }
                         cleanup{
                             cleanWs deleteDirs: true, patterns: [
-                                [pattern: '.tox/py*/log/*.log', type: 'INCLUDE'],
-                                [pattern: '.tox/log/*.log', type: 'INCLUDE'],
+                                [pattern: '.tox/', type: 'INCLUDE'],
+                                [pattern: "HathiZip.dist-info/", type: 'INCLUDE'],
                                 [pattern: 'logs/rox_report.json', type: 'INCLUDE']
                             ]
-                        }
-                        failure {
-                            dir(".tox"){
-                                deleteDir()
-                            }
                         }
                     }
                 }
