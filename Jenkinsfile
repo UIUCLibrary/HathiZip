@@ -39,7 +39,7 @@ pipeline {
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "HathiTrust Zip for Submit", description: "Name given to the project")
         booleanParam(name: "FRESH_WORKSPACE", defaultValue: false, description: "Purge workspace before staring and checking out source")
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: true, description: "Run Tox Tests")
+        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
@@ -269,6 +269,7 @@ pipeline {
                     //}
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
+                        beforeAgent true
                     }
                     steps {
                         script{
@@ -343,6 +344,7 @@ pipeline {
                     }
                     when{
                         equals expected: true, actual: params.PACKAGE_CX_FREEZE
+                        beforeAgent true
                     }
                     steps{
                         //bat "venv\\Scripts\\pip.exe install -r source\\requirements.txt -r source\\requirements-freeze.txt -r source\\requirements-dev.txt -q"
