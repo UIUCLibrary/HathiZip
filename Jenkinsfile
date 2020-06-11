@@ -567,8 +567,7 @@ pipeline {
                             withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
                                 sh(label: "Tagging ${commitTag}",
                                    script: """git tag -a ${commitTag} -m 'Tagged by Jenkins'
-    //                                git push ${SCM} --tags
-                                   git push origin --tags
+    //                                git push origin --tags
                                    """
                                 )
                             }
