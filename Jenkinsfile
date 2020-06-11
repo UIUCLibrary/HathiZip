@@ -553,8 +553,12 @@ pipeline {
                         retry(3)
                     }
                     input {
-                        message 'Add a version tag to git commit?'
+                          message 'Add a version tag to git commit?'
+                          parameters {
+                                credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
+                          }
                     }
+
                     steps{
                         unstash "DIST-INFO"
                         script{
@@ -562,7 +566,8 @@ pipeline {
                             def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
                             sh(label: "Tagging ${commitTag}",
                                script: """git tag -a ${commitTag} -m 'Tagged by Jenkins'
-                               git push --tags
+                               git push ${SCM} --tags
+//                                git push https://${gitCreds}@ --tags
                                """
                             )
 
