@@ -537,6 +537,12 @@ pipeline {
             }
             stages{
                 stage("Tagging git Commit"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/testing/Dockerfile'
+                            label 'linux && docker'
+                        }
+                    }
                     when{
                         allOf{
                             equals expected: true, actual: params.DEPLOY_ADD_TAG
@@ -550,9 +556,6 @@ pipeline {
                     }
                     input {
                         message 'Add a version tag to git commit?'
-//                         parameters {
-//                             string defaultValue: "v${env.PKG_VERSION}", description: 'Add a git tag', name: 'Tag', trim: true
-//                         }
                     }
                     steps{
                         unstash "DIST-INFO"
