@@ -30,6 +30,8 @@ pipeline {
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
+//         TODO Set to false
+        booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: true, description: "Tag commit to current version")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Deploy to SCCM")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
 
@@ -528,7 +530,28 @@ pipeline {
                 }
             }
         }
-
+        stage("Deploy"){
+            stages{
+                stage("Tagging git Commit"){
+                    when{
+                        allOf{
+                            equals expected: true, actual: params.DEPLOY_ADD_TAG
+                        }
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    input {
+                        message 'Add a version tag to git commit?'
+                        parameters {
+                            string defaultValue: '', description: '', name: 'Tag', trim: true
+                        }
+                    }
+                    steps{
+                        echo "Tagging ${env.SCCM_UPLOAD_FOLDER}"
+                    }
+                }
+            }
+        }
         stage("Deploy to SCCM") {
             when{
                 allOf{
