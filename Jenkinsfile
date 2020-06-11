@@ -30,8 +30,7 @@ pipeline {
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-//         TODO Set to false
-        booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: true, description: "Tag commit to current version")
+        booleanParam(name: "DEPLOY_ADD_TAG", defaultValue: false, description: "Tag commit to current version")
         booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Deploy to SCCM")
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
 
@@ -558,7 +557,6 @@ pipeline {
                                 credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
                           }
                     }
-
                     steps{
                         unstash "DIST-INFO"
                         script{
@@ -572,7 +570,6 @@ pipeline {
                                    """
                                 )
                             }
-
                         }
                     }
                     post{
