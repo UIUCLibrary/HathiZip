@@ -13,18 +13,6 @@ CONFIGURATIONS = [
         ]
 ]
 
-
-def get_package_version(stashName, metadataFile){
-    script{
-        node {
-            unstash "${stashName}"
-            def props = readProperties interpolate: true, file: "${metadataFile}"
-            deleteDir()
-            return props.Version
-        }
-    }
-}
-
 pipeline {
     agent none
     triggers {
@@ -557,11 +545,11 @@ pipeline {
                     input {
                         message 'Add a version tag to git commit?'
                         parameters {
-                            string defaultValue: "v${get_package_version('DIST-INFO', 'HathiZip.dist-info/METADATA')}", description: 'Version to use a a git tag', name: 'Tag', trim: true
+                            string defaultValue: "", description: 'Version to use a a git tag', name: 'Tag', trim: true
                         }
                     }
                     steps{
-                        echo "Tagging ${env.SCCM_UPLOAD_FOLDER}"
+                        echo "Tagging ${env.Tag}"
                     }
                 }
             }
