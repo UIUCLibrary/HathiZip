@@ -561,9 +561,9 @@ pipeline {
                         unstash "DIST-INFO"
                         script{
                             def props = readProperties interpolate: true, file: "HathiZip.dist-info/METADATA"
-                            input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
-                            sh(label: "Tagging ${Tag}",
-                               script: "git tag -a ${Tag}"
+                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
+                            sh(label: "Tagging ${commitTag.Tag}",
+                               script: "git tag -a ${commitTag.Tag}"
                             )
 
                         }
