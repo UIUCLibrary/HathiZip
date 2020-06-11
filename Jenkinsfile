@@ -566,8 +566,8 @@ pipeline {
                             def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
                             sh(label: "Tagging ${commitTag}",
                                script: """git tag -a ${commitTag} -m 'Tagged by Jenkins'
-                               git push ${SCM} --tags
-//                                git push https://${gitCreds}@ --tags
+//                                git push ${SCM} --tags
+                               git push https://${gitCreds}@${scm.userRemoteConfigs[0].url} --tags
                                """
                             )
 
