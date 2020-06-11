@@ -13,6 +13,17 @@ CONFIGURATIONS = [
         ]
 ]
 
+def get_package_version(stashName, metadataFile){
+    script{
+        node {
+            unstash "${stashName}"
+            def props = readProperties interpolate: true, file: "${metadataFile}"
+            deleteDir()
+            return props.Version
+        }
+    }
+}
+
 pipeline {
     agent none
     triggers {
@@ -530,6 +541,10 @@ pipeline {
             }
         }
         stage("Deploy"){
+            environment{
+//             get_package_version
+                PKG_VERSION = "d"
+            }
             stages{
                 stage("Tagging git Commit"){
                     when{
@@ -546,7 +561,7 @@ pipeline {
                     input {
                         message 'Add a version tag to git commit?'
                         parameters {
-                            string defaultValue: "", description: 'Version to use a a git tag', name: 'Tag', trim: true
+                            string defaultValue: "v${PKG_VERSION}", description: 'Version to use a a git tag', name: 'Tag', trim: true
                         }
                     }
                     steps{
