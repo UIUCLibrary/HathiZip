@@ -528,10 +528,6 @@ pipeline {
             }
         }
         stage("Deploy"){
-            environment{
-//             get_package_version
-                PKG_VERSION = "d"
-            }
             stages{
                 stage("Tagging git Commit"){
                     agent {
