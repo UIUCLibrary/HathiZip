@@ -201,9 +201,7 @@ pipeline {
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
                             recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
                         }
-                        cleanup{
-                            deleteDir()
-                        }
+
                     }
                 }
                 stage("Run Flake8 Static Analysis") {
@@ -568,6 +566,11 @@ pipeline {
                                """
                             )
 
+                        }
+                    }
+                    post{
+                        cleanup{
+                            deleteDir()
                         }
                     }
                 }
