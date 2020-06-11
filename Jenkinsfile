@@ -541,6 +541,7 @@ pipeline {
                     }
                     options{
                         timeout(time: 1, unit: 'DAYS')
+                        retry(3)
                     }
                     input {
                         message 'Add a version tag to git commit?'
