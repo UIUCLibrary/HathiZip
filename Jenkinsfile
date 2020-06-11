@@ -14,6 +14,28 @@ CONFIGURATIONS = [
 ]
 
 
+def get_package_version(stashName, metadataFile){
+    ws {
+        unstash "${stashName}"
+        script{
+            def props = readProperties interpolate: true, file: "${metadataFile}"
+            deleteDir()
+            return props.Version
+        }
+    }
+}
+
+def get_package_name(stashName, metadataFile){
+    ws {
+        unstash "${stashName}"
+        script{
+            def props = readProperties interpolate: true, file: "${metadataFile}"
+            deleteDir()
+            return props.Name
+        }
+    }
+}
+
 pipeline {
     agent none
     triggers {
@@ -540,10 +562,13 @@ pipeline {
                         beforeAgent true
                         beforeInput true
                     }
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                    }
                     input {
                         message 'Add a version tag to git commit?'
                         parameters {
-                            string defaultValue: '', description: '', name: 'Tag', trim: true
+                            string defaultValue: "v${get_package_version('DIST-INFO', 'HathiZip.dist-info/METADATA')}", description: 'Version to use a a git tag', name: 'Tag', trim: true
                         }
                     }
                     steps{
