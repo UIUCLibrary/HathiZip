@@ -15,9 +15,9 @@ CONFIGURATIONS = [
 
 
 def get_package_version(stashName, metadataFile){
-    node {
-        unstash "${stashName}"
-        script{
+    script{
+        node {
+            unstash "${stashName}"
             def props = readProperties interpolate: true, file: "${metadataFile}"
             deleteDir()
             return props.Version
