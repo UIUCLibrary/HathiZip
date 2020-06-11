@@ -562,9 +562,8 @@ pipeline {
                         script{
                             def props = readProperties interpolate: true, file: "HathiZip.dist-info/METADATA"
                             def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
-                            echo "commitTag = ${commitTag}"
-                            sh(label: "Tagging ${commitTag.Tag}",
-                               script: "git tag -a ${commitTag.Tag}"
+                            sh(label: "Tagging ${commitTag}",
+                               script: "git tag -a ${commitTag}"
                             )
 
                         }
