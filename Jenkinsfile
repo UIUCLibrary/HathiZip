@@ -561,7 +561,7 @@ pipeline {
                     input {
                         message 'Add a version tag to git commit?'
                         parameters {
-                            string defaultValue: "v${PKG_VERSION}", description: 'Version to use a a git tag', name: 'Tag', trim: true
+                            string defaultValue: "v${env.PKG_VERSION}", description: 'Version to use a a git tag', name: 'Tag', trim: true
                         }
                     }
                     steps{
