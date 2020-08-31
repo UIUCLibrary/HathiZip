@@ -13,15 +13,13 @@ CONFIGURATIONS = [
         ]
 ]
 node('linux && docker') {
-    docker.image('python:3.8').inside {
-        stage("Getting Distribution Info"){
-            ws{
-                checkout scm
-                sh "python --version"
-    //             findFiles( excludes: '', glob: '*.rb').each{
-    //                 echo "Found ${it.path}"
-    //                 formulas << it
-    //             }
+    timeout(2){
+        checkout scm
+        ws{
+            docker.image('python:3.8').inside {
+                stage("Getting Distribution Info"){
+                    sh "python --version"
+                }
             }
         }
     }
