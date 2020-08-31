@@ -12,8 +12,18 @@ CONFIGURATIONS = [
         tox_env: "py38"
         ]
 ]
+node('linux && docker') {
 
-
+    stage("Getting Distribution Info"){
+        ws{
+            checkout scm
+//             findFiles( excludes: '', glob: '*.rb').each{
+//                 echo "Found ${it.path}"
+//                 formulas << it
+//             }
+        }
+    }
+}
 pipeline {
     agent none
     libraries {
