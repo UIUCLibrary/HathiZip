@@ -51,24 +51,6 @@ pipeline {
 
     }
     stages {
-//         stage("Getting Distribution Info"){
-//            agent {
-//                 dockerfile {
-//                     filename 'ci/docker/python/linux/testing/Dockerfile'
-//                     label 'linux && docker'
-//                     additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-//                 }
-//             }
-//             steps{
-//                 sh "python setup.py dist_info"
-//             }
-//             post{
-//                 success{
-// //                     stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
-//                     archiveArtifacts artifacts: "HathiZip.dist-info/**"
-//                 }
-//             }
-//         }
         stage("Build"){
             agent {
                 dockerfile {
