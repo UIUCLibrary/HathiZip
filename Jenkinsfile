@@ -14,8 +14,8 @@ CONFIGURATIONS = [
 ]
 node('linux && docker') {
     timeout(2){
-        checkout scm
         ws{
+            checkout scm
             docker.image('python:3.8').inside {
                 stage("Getting Distribution Info"){
                     sh(
