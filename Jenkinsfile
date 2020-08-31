@@ -18,10 +18,16 @@ node('linux && docker') {
         ws{
             docker.image('python:3.8').inside {
                 stage("Getting Distribution Info"){
-                    sh "python --version"
+                    sh(
+                       label: "Running setup.py with dist_info",
+                       script: """python --version
+                                  python setup.py dist_info
+                               """
+                    )
                 }
             }
         }
+        deleteDir()
     }
 }
 pipeline {
