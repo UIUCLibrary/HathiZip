@@ -16,20 +16,23 @@ node('linux && docker') {
     timeout(2){
         ws{
             checkout scm
-            docker.image('python:3.8').inside {
-                stage("Getting Distribution Info"){
-                    sh(
-                       label: "Running setup.py with dist_info",
-                       script: """python --version
-                                  python setup.py dist_info
-                               """
-                    )
-                    stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
-                    archiveArtifacts artifacts: "HathiZip.dist-info/**"
+            try{
+                docker.image('python:3.8').inside {
+                    stage("Getting Distribution Info"){
+                        sh(
+                           label: "Running setup.py with dist_info",
+                           script: """python --version
+                                      python setup.py dist_info
+                                   """
+                        )
+                        stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
+                        archiveArtifacts artifacts: "HathiZip.dist-info/**"
+                    }
                 }
+            } finally{
+                deleteDir()
             }
         }
-        deleteDir()
     }
 }
 pipeline {
