@@ -12,6 +12,12 @@ CONFIGURATIONS = [
         tox_env: "py38"
         ]
 ]
+def tox
+
+node(){
+    checkout scm
+    tox = load("ci/jenkins/scripts/tox.groovy")
+}
 node('linux && docker') {
     timeout(2){
         ws{
