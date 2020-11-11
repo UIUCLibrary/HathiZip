@@ -270,46 +270,6 @@ pipeline {
                         }
                     }
                 }
-//                 stage("Run Tox"){
-//                     agent {
-//                         dockerfile {
-//                             filename 'ci/docker/python/linux/testing/Dockerfile'
-//                             label 'linux && docker'
-//                             additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-//                         }
-//                     }
-//                     when{
-//                         equals expected: true, actual: params.TEST_RUN_TOX
-//                         beforeAgent true
-//                     }
-//                     steps {
-//                         script{
-//                             try{
-//                                 sh (
-//                                     label: "Run Tox",
-//                                     script: "tox -e py --workdir .tox -v"
-//                                 )
-//                             } catch (exc) {
-//                                 sh (
-//                                     label: "Run Tox with new environments",
-//                                     script: "tox --recreate -e py  --workdir .tox -v"
-//                                 )
-//                             }
-//                         }
-//                     }
-//                     post{
-//                         always{
-//                             archiveArtifacts allowEmptyArchive: true, artifacts: '.tox/py*/log/*.log,.tox/log/*.log,logs/tox_report.json'
-//                         }
-//                         cleanup{
-//                             cleanWs deleteDirs: true, patterns: [
-//                                 [pattern: '.tox/', type: 'INCLUDE'],
-//                                 [pattern: "HathiZip.dist-info/", type: 'INCLUDE'],
-//                                 [pattern: 'logs/rox_report.json', type: 'INCLUDE']
-//                             ]
-//                         }
-//                     }
-//                 }
             }
         }
         stage("Packaging") {
