@@ -18,6 +18,7 @@ node(){
     checkout scm
     tox = load("ci/jenkins/scripts/tox.groovy")
 }
+
 node('linux && docker') {
     timeout(2){
         ws{
@@ -41,6 +42,18 @@ node('linux && docker') {
         }
     }
 }
+
+def get_props(){
+    stage('Reading Package Metadata'){
+        node(){
+            unstash 'DIST-INFO'
+            return readProperties(interpolate: true, file: '*.dist-info/METADATA')
+        }
+    }
+}
+
+def props = get_props()
+
 pipeline {
     agent none
     libraries {
@@ -108,9 +121,7 @@ pipeline {
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            unstash "DIST-INFO"
                             script{
-                                def props = readProperties interpolate: true, file: 'HathiZip.dist-info/METADATA'
                                 def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
                                 zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
                                 stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
@@ -134,116 +145,196 @@ pipeline {
             }
         }
         stage("Tests") {
+            stages{
+                stage("Code Quality"){
+                    stages{
+                        stage("Run test"){
+                            parallel{
+                                stage("PyTest"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/python/linux/testing/Dockerfile'
+                                            label 'linux && docker'
+                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                        }
+                                    }
+                                    steps{
+                                        sh(label: "Running pytest",
+                                            script: """python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=hathizip"""
+                                        )
+                                    }
+                                    post {
+                                        always{
+                                            dir("reports"){
+                                                script{
+                                                    def report_files = findFiles glob: '**/*.pytest.xml'
+                                                    report_files.each { report_file ->
+                                                        echo "Found ${report_file}"
+                                                        junit "${report_file}"
+                                                    }
+                                                }
+                                            }
+                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                        }
+                                    }
+                                }
+                                stage("Doctest"){
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/python/linux/testing/Dockerfile'
+                                            label 'linux && docker'
+                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                        }
+                                    }
+                                    steps{
+                                        sh "python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v"
+                                    }
+                                    post{
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: 'build/', type: 'INCLUDE'],
+                                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                                ]
+                                            )
+                                        }
+                                    }
 
-            parallel {
-                stage("PyTest"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        }
-                    }
-                    steps{
-                        sh(label: "Running pytest",
-                            script: """python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=hathizip"""
-                        )
-                    }
-                    post {
-                        always{
-                            dir("reports"){
-                                script{
-                                    def report_files = findFiles glob: '**/*.pytest.xml'
-                                    report_files.each { report_file ->
-                                        echo "Found ${report_file}"
-                                        junit "${report_file}"
+                                }
+                                stage("MyPy"){
+                                    agent {
+                                      dockerfile {
+                                        filename 'ci/docker/python-testing/Dockerfile'
+                                        label "linux && docker"
+                                      }
+                                    }
+                                    steps{
+                                        sh "mkdir -p reports/mypy && mkdir -p logs"
+                                        catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
+                                            sh(
+                                                script: "mypy -p hathizip --html-report ${WORKSPACE}/reports/mypy/mypy_html | tee logs/mypy.log"
+                                            )
+                                        }
+                                    }
+                                    post{
+                                        always {
+                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                        }
+
+                                    }
+                                }
+                                stage("Run Flake8 Static Analysis") {
+                                    agent {
+                                        dockerfile {
+                                            filename 'ci/docker/python/linux/testing/Dockerfile'
+                                            label 'linux && docker'
+                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                                        }
+                                    }
+                                    steps{
+                                        catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
+                                            sh(label: "Running flake8",
+                                               script: """mkdir -p logs
+                                                          flake8 hathizip --tee --output-file=logs/flake8.log
+                                                          """
+                                            )
+                                        }
+                                    }
+                                    post {
+                                        always {
+                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                        }
+                                        cleanup{
+                                            cleanWs(
+                                                deleteDirs: true,
+                                                patterns: [
+                                                    [pattern: 'build/', type: 'INCLUDE'],
+                                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                                ]
+                                            )
+                                        }
                                     }
                                 }
                             }
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                         }
-                    }
-                }
-                stage("Doctest"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        }
-                    }
-                    steps{
-                        sh "python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v"
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                ]
-                            )
-                        }
-                    }
-
-                }
-                stage("MyPy"){
-                    agent {
-                      dockerfile {
-                        filename 'ci/docker/python-testing/Dockerfile'
-                        label "linux && docker"
-                      }
-                    }
-                    steps{
-                        sh "mkdir -p reports/mypy && mkdir -p logs"
-                        catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
-                            sh(
-                                script: "mypy -p hathizip --html-report ${WORKSPACE}/reports/mypy/mypy_html | tee logs/mypy.log"
-                            )
-                        }
-                    }
-                    post{
-                        always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                        }
-
-                    }
-                }
-                stage("Run Flake8 Static Analysis") {
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        }
-                    }
-                    steps{
-                        catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
-                            sh(label: "Running flake8",
-                               script: """mkdir -p logs
-                                          flake8 hathizip --tee --output-file=logs/flake8.log
-                                          """
-                            )
-                        }
-                    }
-                    post {
-                        always {
-                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                ]
-                            )
+                        stage('Run Sonarqube Analysis'){
+                            agent none
+                            options{
+                                lock('speedwagon-sonarscanner')
+                            }
+                            when{
+                                equals expected: true, actual: params.USE_SONARQUBE
+                                beforeAgent true
+                                beforeOptions true
+                            }
+                            steps{
+                                script{
+                                    def sonarqube
+                                    node(){
+                                        checkout scm
+                                        sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
+                                    }
+                                    def stashes = [
+        //                                 'COVERAGE_REPORT_DATA',
+        //                                 'PYTEST_UNIT_TEST_RESULTS',
+        //                                 'PYLINT_REPORT',
+        //                                 'FLAKE8_REPORT'
+                                    ]
+                                    def sonarqubeConfig = [
+                                        installationName: 'sonarcloud',
+                                        credentialsId: 'sonartoken-hathizip',
+                                    ]
+                                    def agent = [
+                                                    dockerfile: [
+                                                        filename: 'ci/docker/python/linux/jenkins/Dockerfile',
+                                                        label: 'linux && docker',
+                                                        additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                        args: '--mount source=sonar-cache-hathi_zip,target=/home/user/.sonar/cache',
+                                                    ]
+                                                ]
+                                    if (env.CHANGE_ID){
+                                        sonarqube.submitToSonarcloud(
+                                            agent: agent,
+                                            reportStashes: stashes,
+                                            artifactStash: 'sonarqube artifacts',
+                                            sonarqube: sonarqubeConfig,
+                                            pullRequest: [
+                                                source: env.CHANGE_ID,
+                                                destination: env.BRANCH_NAME,
+                                            ],
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                            ],
+                                        )
+                                    } else {
+                                        sonarqube.submitToSonarcloud(
+                                            agent: agent,
+                                            reportStashes: stashes,
+                                            artifactStash: 'sonarqube artifacts',
+                                            sonarqube: sonarqubeConfig,
+                                            package: [
+                                                version: props.Version,
+                                                name: props.Name
+                                            ]
+                                        )
+                                    }
+                                }
+                            }
+                            post {
+                                always{
+                                    node(''){
+                                        unstash 'sonarqube artifacts'
+                                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -439,9 +530,7 @@ pipeline {
                             stage("Testing DevPi Package"){
                                 steps{
                                     timeout(10){
-                                        unstash "DIST-INFO"
                                         script{
-                                            def props = readProperties interpolate: true, file: 'HathiZip.dist-info/METADATA'
                                             bat "devpi use https://devpi.library.illinois.edu --clientdir certs\\ && devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\ && devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\"
                                             bat "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${FORMAT} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
                                         }
@@ -487,9 +576,7 @@ pipeline {
                         message 'Release to DevPi Production?'
                     }
                     steps {
-                        unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: "HathiZip.dist-info/METADATA"
                             sh(label: "Pushing to production index",
                                script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
                                           devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
@@ -506,8 +593,6 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build("hathizip:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'HathiZip.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -522,8 +607,6 @@ pipeline {
                     node('linux && docker') {
                        script{
                             docker.build("hathizip:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                unstash "DIST-INFO"
-                                def props = readProperties interpolate: true, file: 'HathiZip.dist-info/METADATA'
                                 sh(
                                     label: "Connecting to DevPi Server",
                                     script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
@@ -564,9 +647,7 @@ pipeline {
                           }
                     }
                     steps{
-                        unstash "DIST-INFO"
                         script{
-                            def props = readProperties interpolate: true, file: "HathiZip.dist-info/METADATA"
                             def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
                             withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
                                 sh(label: "Tagging ${commitTag}",
