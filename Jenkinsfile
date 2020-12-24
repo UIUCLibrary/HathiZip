@@ -47,11 +47,10 @@ def get_props(){
     stage('Reading Package Metadata'){
         node(){
             unstash 'DIST-INFO'
-            findFiles( glob: '*.dist-info/METADATA').each{
-                def p = readProperties(interpolate: true, file: it.path )
-                echo p
-                return p
-            }
+            def metadata = findFiles( glob: '*.dist-info/METADATA')[0]
+            def p = readProperties(interpolate: true, file: it.path )
+            echo p
+            return p
         }
     }
 }
