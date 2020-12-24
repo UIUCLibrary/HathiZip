@@ -49,7 +49,7 @@ def get_props(){
             unstash 'DIST-INFO'
             def metadata = findFiles( glob: '*.dist-info/METADATA')[0]
             def p = readProperties(interpolate: true, file: metadata.path )
-            echo p
+            echo "p = ${p}"
             return p
         }
     }
