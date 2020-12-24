@@ -47,7 +47,9 @@ def get_props(){
     stage('Reading Package Metadata'){
         node(){
             unstash 'DIST-INFO'
-            return readProperties(interpolate: true, file: '*.dist-info/METADATA')
+            findFiles( glob: '*.dist-info/METADATA'){
+                return readProperties(interpolate: true, file: it.path )
+            }
         }
     }
 }
@@ -292,13 +294,13 @@ pipeline {
                                         credentialsId: 'sonartoken-hathizip',
                                     ]
                                     def agent = [
-                                                    dockerfile: [
-                                                        filename: 'ci/docker/python/linux/testing/Dockerfile',
-                                                        label: 'linux && docker',
-                                                        additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                        args: '--mount source=sonar-cache-hathi_zip,target=/home/user/.sonar/cache',
-                                                    ]
-                                                ]
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/linux/testing/Dockerfile',
+                                                label: 'linux && docker',
+                                                additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                args: '--mount source=sonar-cache-hathi_zip,target=/home/user/.sonar/cache',
+                                            ]
+                                        ]
                                     if (env.CHANGE_ID){
                                         sonarqube.submitToSonarcloud(
                                             agent: agent,
