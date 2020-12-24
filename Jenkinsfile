@@ -165,22 +165,26 @@ pipeline {
                                         }
                                     }
                                     steps{
+
                                         sh(label: "Running pytest",
-                                            script: """python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=hathizip"""
+                                            script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
+//                                             script: """python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=hathizip"""
                                         )
                                     }
                                     post {
                                         always{
-                                            dir("reports"){
-                                                script{
-                                                    def report_files = findFiles glob: '**/*.pytest.xml'
-                                                    report_files.each { report_file ->
-                                                        echo "Found ${report_file}"
-                                                        junit "${report_file}"
-                                                    }
-                                                }
-                                            }
-                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
+                                            stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
+                                            junit 'reports/tests/pytest/pytest-junit.xml'
+//                                             dir("reports"){
+//                                                 script{
+//                                                     def report_files = findFiles glob: '**/*.pytest.xml'
+//                                                     report_files.each { report_file ->
+//                                                         echo "Found ${report_file}"
+//                                                         junit "${report_file}"
+//                                                     }
+//                                                 }
+//                                             }
+//                                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
                                         }
                                     }
                                 }
@@ -289,7 +293,7 @@ pipeline {
                                     }
                                     def stashes = [
         //                                 'COVERAGE_REPORT_DATA',
-        //                                 'PYTEST_UNIT_TEST_RESULTS',
+                                        'PYTEST_UNIT_TEST_RESULTS',
         //                                 'PYLINT_REPORT',
                                         'FLAKE8_REPORT'
                                     ]
