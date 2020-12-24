@@ -48,7 +48,9 @@ def get_props(){
         node(){
             unstash 'DIST-INFO'
             findFiles( glob: '*.dist-info/METADATA').each{
-                return readProperties(interpolate: true, file: it.path )
+                def p = readProperties(interpolate: true, file: it.path )
+                echo p
+                return p
             }
         }
     }
