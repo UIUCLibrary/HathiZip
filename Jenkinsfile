@@ -84,7 +84,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/testing/Dockerfile'
                     label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
                 }
             }
             stages{
@@ -164,13 +164,6 @@ pipeline {
                         stage("Run test"){
                             parallel{
                                 stage("PyTest"){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                                            label 'linux && docker'
-                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                        }
-                                    }
                                     steps{
 
                                         sh(label: "Running pytest",
@@ -196,13 +189,6 @@ pipeline {
                                     }
                                 }
                                 stage("Doctest"){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                                            label 'linux && docker'
-                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                        }
-                                    }
                                     steps{
                                         sh "python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v"
                                     }
