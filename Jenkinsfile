@@ -186,9 +186,7 @@ pipeline {
                                         }
                                         stage("Doctest"){
                                             steps{
-                                                sh '''mkdir -p build/docs/
-                                                      mkdir -p build/docs/doctrees
-                                                      python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
+                                                sh '''coverage run --parallel-mode --source=hathizip -m -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
                                                       '''
                                             }
                                             post{
