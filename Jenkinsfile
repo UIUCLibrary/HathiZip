@@ -84,7 +84,7 @@ pipeline {
                 dockerfile {
                     filename 'ci/docker/python/linux/testing/Dockerfile'
                     label 'linux && docker'
-                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
                 }
             }
             stages{
@@ -153,17 +153,17 @@ pipeline {
         stage("Tests") {
             stages{
                 stage("Code Quality"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/testing/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
                     stages{
                         stage("Run test"){
                             parallel{
                                 stage("PyTest"){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                                            label 'linux && docker'
-                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                        }
-                                    }
                                     steps{
 
                                         sh(label: "Running pytest",
@@ -189,15 +189,10 @@ pipeline {
                                     }
                                 }
                                 stage("Doctest"){
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                                            label 'linux && docker'
-                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                        }
-                                    }
                                     steps{
-                                        sh "python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v"
+                                        sh '''mkdir -p build/docs/
+                                              python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
+                                              '''
                                     }
                                     post{
                                         cleanup{
@@ -215,12 +210,6 @@ pipeline {
 
                                 }
                                 stage("MyPy"){
-                                    agent {
-                                      dockerfile {
-                                        filename 'ci/docker/python-testing/Dockerfile'
-                                        label "linux && docker"
-                                      }
-                                    }
                                     steps{
                                         sh "mkdir -p reports/mypy && mkdir -p logs"
                                         catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
@@ -238,13 +227,6 @@ pipeline {
                                     }
                                 }
                                 stage("Run Flake8 Static Analysis") {
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                                            label 'linux && docker'
-                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                        }
-                                    }
                                     steps{
                                         catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
                                             sh(label: "Running flake8",
@@ -273,9 +255,24 @@ pipeline {
                                     }
                                 }
                             }
+                            post{
+                                always{
+                                    sh(label: 'combining coverage data',
+                                       script: '''coverage combine
+                                                  coverage xml -o ./reports/coverage.xml
+                                                  '''
+                                    )
+                                    stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
+                                    publishCoverage(
+                                                adapters: [
+                                                        coberturaAdapter('reports/coverage.xml')
+                                                    ],
+                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                            )
+                                }
+                            }
                         }
                         stage('Run Sonarqube Analysis'){
-                            agent none
                             options{
                                 lock('speedwagon-sonarscanner')
                             }
@@ -292,7 +289,7 @@ pipeline {
                                         sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                     }
                                     def stashes = [
-        //                                 'COVERAGE_REPORT_DATA',
+                                        'COVERAGE_REPORT_DATA',
                                         'PYTEST_UNIT_TEST_RESULTS',
         //                                 'PYLINT_REPORT',
                                         'FLAKE8_REPORT'
