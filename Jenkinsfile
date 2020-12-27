@@ -311,7 +311,7 @@ pipeline {
                                     def stashes = [
                                         'COVERAGE_REPORT_DATA',
                                         'PYTEST_UNIT_TEST_RESULTS',
-        //                                 'PYLINT_REPORT',
+                                        'PYLINT_REPORT',
                                         'FLAKE8_REPORT'
                                     ]
                                     def sonarqubeConfig = [
