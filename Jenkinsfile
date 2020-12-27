@@ -165,7 +165,10 @@ pipeline {
                             stages{
                                 stage("Set up Tests"){
                                     steps{
-                                        sh "python setup.py build"
+                                        sh '''mkdir -p logs
+                                              python setup.py build
+                                              mkdir -p reports
+                                              '''
                                     }
                                 }
                                 stage("Run Tests"){
@@ -187,9 +190,7 @@ pipeline {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                                     sh(label: "Running pylint",
-                                                        script: '''mkdir -p logs
-                                                                   mkdir -p reports
-                                                                   pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
+                                                        script: '''pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
                                                                    '''
 
                                                     )
@@ -247,8 +248,7 @@ pipeline {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
                                                     sh(label: "Running flake8",
-                                                       script: """mkdir -p logs
-                                                                  flake8 hathizip --tee --output-file=logs/flake8.log
+                                                       script: """flake8 hathizip --tee --output-file=logs/flake8.log
                                                                   """
                                                     )
                                                 }
