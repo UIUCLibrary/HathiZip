@@ -153,6 +153,13 @@ pipeline {
         stage("Tests") {
             stages{
                 stage("Code Quality"){
+                    agent {
+                        dockerfile {
+                            filename 'ci/docker/python/linux/testing/Dockerfile'
+                            label 'linux && docker'
+                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
+                        }
+                    }
                     stages{
                         stage("Run test"){
                             parallel{
@@ -215,12 +222,6 @@ pipeline {
 
                                 }
                                 stage("MyPy"){
-                                    agent {
-                                      dockerfile {
-                                        filename 'ci/docker/python-testing/Dockerfile'
-                                        label "linux && docker"
-                                      }
-                                    }
                                     steps{
                                         sh "mkdir -p reports/mypy && mkdir -p logs"
                                         catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
@@ -238,13 +239,6 @@ pipeline {
                                     }
                                 }
                                 stage("Run Flake8 Static Analysis") {
-                                    agent {
-                                        dockerfile {
-                                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                                            label 'linux && docker'
-                                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                                        }
-                                    }
                                     steps{
                                         catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
                                             sh(label: "Running flake8",
