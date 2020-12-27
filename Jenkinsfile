@@ -210,8 +210,8 @@ pipeline {
                                         }
                                         stage("Doctest"){
                                             steps{
-                                                sh ''' mkdir -p build/docs/doctrees
-                                                        coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
+                                                unstash "DOCS_ARCHIVE"
+                                                sh '''coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
                                                       '''
                                             }
                                             post{
