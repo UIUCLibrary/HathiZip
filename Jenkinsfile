@@ -153,106 +153,99 @@ pipeline {
         stage("Tests") {
             stages{
                 stage("Code Quality"){
-                    agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/testing/Dockerfile'
-                            label 'linux && docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                        }
-                    }
                     stages{
                         stage("Run test"){
-                            parallel{
-                                stage("PyTest"){
-                                    steps{
-
-                                        sh(label: "Running pytest",
-                                            script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
-//                                             script: """python -m pytest --junitxml=reports/junit-${env.NODE_NAME}-pytest.xml --junit-prefix=${env.NODE_NAME}-pytest --cov-report html:reports/coverage/ --cov=hathizip"""
-                                        )
-                                    }
-                                    post {
-                                        always{
-                                            stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
-                                            junit 'reports/tests/pytest/pytest-junit.xml'
-//                                             dir("reports"){
-//                                                 script{
-//                                                     def report_files = findFiles glob: '**/*.pytest.xml'
-//                                                     report_files.each { report_file ->
-//                                                         echo "Found ${report_file}"
-//                                                         junit "${report_file}"
-//                                                     }
-//                                                 }
-//                                             }
-//                                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/coverage', reportFiles: 'index.html', reportName: 'Coverage', reportTitles: ''])
-                                        }
-                                    }
+                            agent {
+                                dockerfile {
+                                    filename 'ci/docker/python/linux/testing/Dockerfile'
+                                    label 'linux && docker'
+                                    additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
                                 }
-                                stage("Doctest"){
-                                    steps{
-                                        sh '''mkdir -p build/docs/
-                                              python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
-                                              '''
-                                    }
-                                    post{
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: 'build/', type: 'INCLUDE'],
-                                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                                ]
-                                            )
+                            }
+                            stages{
+                                stage("Run Tests"){
+                                    parallel{
+                                        stage("PyTest"){
+                                            steps{
+
+                                                sh(label: "Running pytest",
+                                                    script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
+                                                )
+                                            }
+                                            post {
+                                                always{
+                                                    stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
+                                                    junit 'reports/tests/pytest/pytest-junit.xml'
+                                                }
+                                            }
+                                        }
+                                        stage("Doctest"){
+                                            steps{
+                                                sh '''mkdir -p build/docs/
+                                                      python -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
+                                                      '''
+                                            }
+                                            post{
+                                                cleanup{
+                                                    cleanWs(
+                                                        deleteDirs: true,
+                                                        patterns: [
+                                                            [pattern: 'build/', type: 'INCLUDE'],
+                                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                                            [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                                        ]
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        stage("MyPy"){
+                                            steps{
+                                                sh "mkdir -p reports/mypy && mkdir -p logs"
+                                                catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
+                                                    sh(
+                                                        script: "mypy -p hathizip --html-report ${WORKSPACE}/reports/mypy/mypy_html | tee logs/mypy.log"
+                                                    )
+                                                }
+                                            }
+                                            post{
+                                                always {
+                                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                                }
+
+                                            }
+                                        }
+                                        stage("Run Flake8 Static Analysis") {
+                                            steps{
+                                                catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
+                                                    sh(label: "Running flake8",
+                                                       script: """mkdir -p logs
+                                                                  flake8 hathizip --tee --output-file=logs/flake8.log
+                                                                  """
+                                                    )
+                                                }
+                                            }
+                                            post {
+                                                always {
+                                                    stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
+                                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                                }
+                                                cleanup{
+                                                    cleanWs(
+                                                        deleteDirs: true,
+                                                        patterns: [
+                                                            [pattern: 'build/', type: 'INCLUDE'],
+                                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                                            [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                                        ]
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
 
-                                }
-                                stage("MyPy"){
-                                    steps{
-                                        sh "mkdir -p reports/mypy && mkdir -p logs"
-                                        catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
-                                            sh(
-                                                script: "mypy -p hathizip --html-report ${WORKSPACE}/reports/mypy/mypy_html | tee logs/mypy.log"
-                                            )
-                                        }
-                                    }
-                                    post{
-                                        always {
-                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                        }
-
-                                    }
-                                }
-                                stage("Run Flake8 Static Analysis") {
-                                    steps{
-                                        catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
-                                            sh(label: "Running flake8",
-                                               script: """mkdir -p logs
-                                                          flake8 hathizip --tee --output-file=logs/flake8.log
-                                                          """
-                                            )
-                                        }
-                                    }
-                                    post {
-                                        always {
-                                            stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
-                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                        }
-                                        cleanup{
-                                            cleanWs(
-                                                deleteDirs: true,
-                                                patterns: [
-                                                    [pattern: 'build/', type: 'INCLUDE'],
-                                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                                ]
-                                            )
-                                        }
-                                    }
                                 }
                             }
                             post{
