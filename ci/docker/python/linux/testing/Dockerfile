@@ -4,13 +4,14 @@ ARG PIP_TRUSTED_HOST
 
 FROM python:${PYTHON_VERSION} as wheel_builder
 
-ADD requirements.txt requirements-dev.txt /tmp/
+ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel
 
 RUN pip wheel --wheel-dir=/wheels -r /tmp/requirements.txt -v && \
-    pip wheel --wheel-dir=/wheels -r /tmp/requirements-dev.txt
+    pip wheel --wheel-dir=/wheels -r /tmp/requirements-dev.txt && \
+    pip wheel --wheel-dir=/wheels -r /tmp/requirements-ci.txt
 
 FROM python:${PYTHON_VERSION}
 ARG USER_ID=1000
@@ -23,9 +24,8 @@ RUN apt update -y && apt install -y libgl1-mesa-glx && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=wheel_builder /wheels /wheels/
-ADD requirements.txt requirements-dev.txt /tmp/
-
-RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt -r /tmp/requirements-dev.txt
+ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
+RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt -r /tmp/requirements-dev.txt -r /tmp/requirements-ci.txt
 ENV PIP_FIND_LINKS=/wheels
 USER user
 WORKDIR /home/user
