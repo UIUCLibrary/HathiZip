@@ -273,7 +273,6 @@ pipeline {
                             }
                         }
                         stage('Run Sonarqube Analysis'){
-                            agent none
                             options{
                                 lock('speedwagon-sonarscanner')
                             }
