@@ -255,6 +255,22 @@ pipeline {
                                     }
                                 }
                             }
+                            post{
+                                always{
+                                    sh(label: 'combining coverage data',
+                                       script: '''coverage combine
+                                                  coverage xml -o ./reports/coverage.xml
+                                                  '''
+                                    )
+                                    stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
+                                    publishCoverage(
+                                                adapters: [
+                                                        coberturaAdapter('reports/coverage.xml')
+                                                    ],
+                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                            )
+                                }
+                            }
                         }
                         stage('Run Sonarqube Analysis'){
                             agent none
@@ -274,7 +290,7 @@ pipeline {
                                         sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
                                     }
                                     def stashes = [
-        //                                 'COVERAGE_REPORT_DATA',
+                                        'COVERAGE_REPORT_DATA',
                                         'PYTEST_UNIT_TEST_RESULTS',
         //                                 'PYLINT_REPORT',
                                         'FLAKE8_REPORT'
