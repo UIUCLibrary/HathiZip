@@ -163,6 +163,11 @@ pipeline {
                                 }
                             }
                             stages{
+                                stage("Set up Tests"){
+                                    steps{
+                                        sh "python setup.py build"
+                                    }
+                                }
                                 stage("Run Tests"){
                                     parallel{
                                         stage("PyTest"){
