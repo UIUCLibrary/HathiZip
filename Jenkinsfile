@@ -186,7 +186,7 @@ pipeline {
                                         }
                                         stage("Doctest"){
                                             steps{
-                                                sh '''coverage run --parallel-mode --source=hathizip -m -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
+                                                sh '''coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
                                                       '''
                                             }
                                             post{
