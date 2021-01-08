@@ -331,7 +331,7 @@ pipeline {
                         }
                         stage('Run Sonarqube Analysis'){
                             options{
-                                lock('speedwagon-sonarscanner')
+                                lock('hathizip-sonarscanner')
                             }
                             when{
                                 equals expected: true, actual: params.USE_SONARQUBE
