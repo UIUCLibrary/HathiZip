@@ -967,13 +967,6 @@ pipeline {
                                     )
                             }
                         }
-//                         agent {
-//                             dockerfile {
-//                                 additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
-//                                 filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
-//                                 label "${PLATFORM} && docker"
-//                             }
-//                         }
                         stages{
                             stage('Testing DevPi Package wheel'){
                                 steps{
@@ -1005,23 +998,6 @@ pipeline {
                                     }
                                 }
                             }
-//                             stage('Testing DevPi Package wheel'){
-//                                 steps{
-//                                     timeout(10){
-//                                         script{
-//                                             devpi.testDevpiPackage(
-//                                                 devpiIndex: getDevPiStagingIndex(),
-//                                                 server: 'https://devpi.library.illinois.edu',
-//                                                 credentialsId: 'DS_devpi',
-//                                                 pkgName: props.Name,
-//                                                 pkgVersion: props.Version,
-//                                                 pkgSelector: 'whl',
-//                                                 toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
-//                                             )
-//                                         }
-//                                     }
-//                                 }
-//                             }
                             stage('Testing DevPi sdist Package'){
                                 steps{
                                     script{
@@ -1050,20 +1026,6 @@ pipeline {
                                             ]
                                         )
                                     }
-//                                 }
-//                                     timeout(10){
-//                                         script{
-//                                             devpi.testDevpiPackage(
-//                                                 devpiIndex: getDevPiStagingIndex(),
-//                                                 server: 'https://devpi.library.illinois.edu',
-//                                                 credentialsId: 'DS_devpi',
-//                                                 pkgName: props.Name,
-//                                                 pkgVersion: props.Version,
-//                                                 pkgSelector: 'tar.gz',
-//                                                 toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
-//                                             )
-//                                         }
-//                                     }
                                 }
                             }
                         }
