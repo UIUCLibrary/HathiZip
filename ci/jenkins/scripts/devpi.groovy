@@ -240,6 +240,18 @@ def testDevpiPackage2(args=[:]){
     def agent = getAgent(args)
     agent{
         echo "HERE inside"
+        if(isUnix()){
+            sh(label: "Checking for devpi client",
+               script: """devpi --help
+                          """
+               )
+        } else{
+           bat(label: "Checking for devpi client",
+               script: """devpi --help
+                          """
+               )
+
+        }
     }
 //     echo "agent = ${agent}"
 }
