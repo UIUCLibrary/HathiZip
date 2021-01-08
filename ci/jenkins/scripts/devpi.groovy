@@ -238,6 +238,9 @@ def getAgent(args){
 def testDevpiPackage2(args=[:]){
     echo "testDevpiPackage2(${args})"
     def agent = getAgent(args)
+    agent{
+        echo "HERE inside"
+    }
 //     echo "agent = ${agent}"
 }
 
