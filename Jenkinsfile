@@ -17,6 +17,22 @@ CONFIGURATIONS = [
         ]
 ]
 
+
+def getDevPiStagingIndex(){
+
+    if (env.TAG_NAME?.trim()){
+        return 'tag_staging'
+    } else{
+        return "${env.BRANCH_NAME}_staging"
+    }
+}
+
+def DEVPI_CONFIG = [
+    index: getDevPiStagingIndex(),
+    server: 'https://devpi.library.illinois.edu',
+    credentialsId: 'DS_devpi',
+]
+
 def DEFAULT_AGENT = [
     filename: 'ci/docker/python/linux/testing/Dockerfile',
     label: 'linux && docker',
@@ -29,14 +45,6 @@ def DOCKER_PLATFORM_BUILD_ARGS = [
 
 def tox
 
-def getDevPiStagingIndex(){
-
-    if (env.TAG_NAME?.trim()){
-        return 'tag_staging'
-    } else{
-        return "${env.BRANCH_NAME}_staging"
-    }
-}
 
 
 node(){
@@ -1107,12 +1115,7 @@ pipeline {
 
                                             ]
                                         ],
-                                        devpi: [
-                                            index: getDevPiStagingIndex(),
-                                            server: 'https://devpi.library.illinois.edu',
-                                            credentialsId: 'DS_devpi',
-
-                                        ],
+                                        devpi: DEVPI_CONFIG,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1135,12 +1138,7 @@ pipeline {
 
                                             ]
                                         ],
-                                        devpi: [
-                                            index: getDevPiStagingIndex(),
-                                            server: 'https://devpi.library.illinois.edu',
-                                            credentialsId: 'DS_devpi',
-
-                                        ],
+                                        devpi: DEVPI_CONFIG,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1163,11 +1161,7 @@ pipeline {
 
                                             ]
                                         ],
-                                        devpi: [
-                                            index: getDevPiStagingIndex(),
-                                            server: 'https://devpi.library.illinois.edu',
-                                            credentialsId: 'DS_devpi',
-                                        ],
+                                        devpi: DEVPI_CONFIG,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1189,12 +1183,7 @@ pipeline {
                                                 label: 'windows && docker'
                                             ]
                                         ],
-                                        devpi: [
-                                            index: getDevPiStagingIndex(),
-                                            server: 'https://devpi.library.illinois.edu',
-                                            credentialsId: 'DS_devpi',
-
-                                        ],
+                                        devpi: DEVPI_CONFIG,
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -1208,91 +1197,90 @@ pipeline {
                             }
                         )
                     }
-
                 }
-                stage('Test DevPi packages') {
-                    matrix {
-                        axes {
-                            axis {
-                                name 'PLATFORM'
-                                values(
-                                    'windows',
-                                    'linux'
-                                    )
-                            }
-                            axis {
-                                name 'PYTHON_VERSION'
-                                values(
-                                    '3.7',
-                                    '3.8',
-                                    '3.9'
-                                    )
-                            }
-                        }
-                        stages{
-                            stage('Testing DevPi Package wheel'){
-                                steps{
-                                    script{
-                                        devpi.testDevpiPackage2(
-                                            agent: [
-                                                dockerfile: [
-                                                    filename: "ci/docker/python/${PLATFORM}/tox/Dockerfile",
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}",
-                                                    label: "${PLATFORM} && docker"
-
-                                                ]
-                                            ],
-                                            devpi: [
-                                                index: getDevPiStagingIndex(),
-                                                server: 'https://devpi.library.illinois.edu',
-                                                credentialsId: 'DS_devpi',
-
-                                            ],
-                                            package:[
-                                                name: props.Name,
-                                                version: props.Version,
-                                                selector: "whl"
-                                            ],
-                                            test:[
-                                                toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION)
-                                            ]
-                                        )
-                                    }
-                                }
-                            }
-                            stage('Testing DevPi sdist Package'){
-                                steps{
-                                    script{
-                                        devpi.testDevpiPackage2(
-                                            agent: [
-                                                dockerfile: [
-                                                    filename: "ci/docker/python/${PLATFORM}/tox/Dockerfile",
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}",
-                                                    label: "${PLATFORM} && docker"
-
-                                                ]
-                                            ],
-                                            devpi: [
-                                                index: getDevPiStagingIndex(),
-                                                server: 'https://devpi.library.illinois.edu',
-                                                credentialsId: 'DS_devpi',
-
-                                            ],
-                                            package:[
-                                                name: props.Name,
-                                                version: props.Version,
-                                                selector: "tar.gz"
-                                            ],
-                                            test:[
-                                                toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION)
-                                            ]
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+//                 stage('Test DevPi packages') {
+//                     matrix {
+//                         axes {
+//                             axis {
+//                                 name 'PLATFORM'
+//                                 values(
+//                                     'windows',
+//                                     'linux'
+//                                     )
+//                             }
+//                             axis {
+//                                 name 'PYTHON_VERSION'
+//                                 values(
+//                                     '3.7',
+//                                     '3.8',
+// //                                     '3.9'
+//                                     )
+//                             }
+//                         }
+//                         stages{
+//                             stage('Testing DevPi Package wheel'){
+//                                 steps{
+//                                     script{
+//                                         devpi.testDevpiPackage2(
+//                                             agent: [
+//                                                 dockerfile: [
+//                                                     filename: "ci/docker/python/${PLATFORM}/tox/Dockerfile",
+//                                                     additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}",
+//                                                     label: "${PLATFORM} && docker"
+//
+//                                                 ]
+//                                             ],
+//                                             devpi: [
+//                                                 index: getDevPiStagingIndex(),
+//                                                 server: 'https://devpi.library.illinois.edu',
+//                                                 credentialsId: 'DS_devpi',
+//
+//                                             ],
+//                                             package:[
+//                                                 name: props.Name,
+//                                                 version: props.Version,
+//                                                 selector: "whl"
+//                                             ],
+//                                             test:[
+//                                                 toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION)
+//                                             ]
+//                                         )
+//                                     }
+//                                 }
+//                             }
+//                             stage('Testing DevPi sdist Package'){
+//                                 steps{
+//                                     script{
+//                                         devpi.testDevpiPackage2(
+//                                             agent: [
+//                                                 dockerfile: [
+//                                                     filename: "ci/docker/python/${PLATFORM}/tox/Dockerfile",
+//                                                     additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}",
+//                                                     label: "${PLATFORM} && docker"
+//
+//                                                 ]
+//                                             ],
+//                                             devpi: [
+//                                                 index: getDevPiStagingIndex(),
+//                                                 server: 'https://devpi.library.illinois.edu',
+//                                                 credentialsId: 'DS_devpi',
+//
+//                                             ],
+//                                             package:[
+//                                                 name: props.Name,
+//                                                 version: props.Version,
+//                                                 selector: "tar.gz"
+//                                             ],
+//                                             test:[
+//                                                 toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION)
+//                                             ]
+//                                         )
+//                                     }
+//                                 }
+//                             }
+//                         }
+//                     }
+//                 }
                 stage("Deploy to DevPi Production") {
                     when {
                         allOf{
