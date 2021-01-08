@@ -202,6 +202,9 @@ def getNodeLabel(agent){
     }
     return label
 }
+def testDevpiPackage2(args=[:]){
+    echo "HERER"
+}
 
 def getAgent(args){
 
