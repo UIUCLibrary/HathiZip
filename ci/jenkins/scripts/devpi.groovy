@@ -204,7 +204,6 @@ def getNodeLabel(agent){
 }
 
 def getAgent(args){
-    echo "getAgent(${args})"
     if (args.agent.containsKey("label")){
         return { inner ->
             node(args.agent.label){
@@ -234,24 +233,60 @@ def getAgent(args){
     }
     error('Invalid agent type, expect [dockerfile,label]')
 }
+def logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir){
+    withEnv([
+        "DEVPI=${devpiExec}",
+        "DEVPI_SERVER=${serverUrl}",
+        "CLIENT_DIR=${clientDir}"
+        ]){
+        withCredentials(
+                [usernamePassword(
+                    credentialsId: credentialsId,
+                    passwordVariable: 'DEVPI_PASSWORD',
+                    usernameVariable: 'DEVPI_USERNAME'
+            )]){
+            if(isUnix()){
+                sh(label: "Logging into DevPi",
+                   script: '''$DEVPI use $DEVPI_SERVER --clientdir $CLIENT_DIR
+                              $DEVPI login $DEVPI_USERNAME --password=$DEVPI_PASSWORD --clientdir $CLIENT_DIR
+                              '''
+                   )
 
+            } else {
+                bat(label: "Logging into DevPi Staging",
+                   script: '''%DEVPI% use %DEVPI_SERVER% --clientdir %CLIENT_DIR%
+                              %DEVPI% login %DEVPI_USERNAME% --password=%DEVPI_PASSWORD% --clientdir %CLIENT_DIR%
+                              '''
+                   )
+
+            }
+        }
+    }
+}
 def testDevpiPackage2(args=[:]){
     echo "testDevpiPackage2(${args})"
     def agent = getAgent(args)
+    def devpiExec = args.devpi['devpiExec'] ? args.devpi['devpiExec'] : "devpi"
+    def serverUrl = args.devpi.server
+    def credentialsId = args.devpi.credentialsId
+    def clientDir = args['clientDir'] ? args['clientDir']: './devpi'
     agent{
         echo "HERE inside"
-        if(isUnix()){
-            sh(label: "Checking for devpi client",
-               script: """devpi --help
-                          """
-               )
-        } else{
-           bat(label: "Checking for devpi client",
-               script: """devpi --help
-                          """
-               )
-
-        }
+        echo "args.devpi = ${args.devpi}"
+        logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir)
+//         testDevpiPackage()
+//         if(isUnix()){
+//             sh(label: "Checking for devpi client",
+//                script: """devpi --help
+//                           """
+//                )
+//         } else{
+//            bat(label: "Checking for devpi client",
+//                script: """devpi --help
+//                           """
+//                )
+//
+//         }
     }
 //     echo "agent = ${agent}"
 }

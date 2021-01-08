@@ -986,6 +986,12 @@ pipeline {
                                                     label: "${PLATFORM} && docker"
 
                                                 ]
+                                            ],
+                                            devpi: [
+                                                index: getDevPiStagingIndex(),
+                                                server: 'https://devpi.library.illinois.edu',
+                                                credentialsId: 'DS_devpi',
+
                                             ]
                                         )
 //                                         devpiAgent{
