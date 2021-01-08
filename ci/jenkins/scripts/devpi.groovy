@@ -150,6 +150,9 @@ def getNodeLabel(agent){
     }
     return label
 }
+def testDevpiPackage2(args=[:]){
+    echo "HERER"
+}
 
 def getAgent(args){
     if (args.agent.containsKey("label")){
