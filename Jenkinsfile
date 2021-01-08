@@ -85,13 +85,13 @@ def startup(){
                             try{
                                 docker.image('python:3.8').inside {
                                     sh(
-                                       label: "Running setup.py with dist_info",
+                                       label: 'Running setup.py with dist_info',
                                        script: """python --version
                                                   python setup.py dist_info
                                                """
                                     )
-                                    stash includes: "HathiZip.dist-info/**", name: 'DIST-INFO'
-                                    archiveArtifacts artifacts: "HathiZip.dist-info/**"
+                                    stash includes: 'HathiZip.dist-info/**', name: 'DIST-INFO'
+                                    archiveArtifacts artifacts: 'HathiZip.dist-info/**'
                                 }
                             } finally{
                                 deleteDir()
@@ -130,10 +130,10 @@ pipeline {
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "HathiTrust Zip for Submit", description: "Name given to the project")
 //         TODO: set defaultValue to true
-        booleanParam(name: 'RUN_CHECKS', defaultValue: false, description: "Run checks on code")
+        booleanParam(name: 'RUN_CHECKS', defaultValue: false, description: 'Run checks on code')
         booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
-        booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: "Test packages")
+        booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
         booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
 //         TODO: set defaultValue to false
@@ -144,7 +144,7 @@ pipeline {
         booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
     }
     stages {
-        stage("Build"){
+        stage('Build'){
             agent {
                 dockerfile {
                     filename DEFAULT_AGENT.filename
@@ -153,22 +153,22 @@ pipeline {
                 }
             }
             stages{
-                stage("Python Package"){
+                stage('Python Package'){
                     steps {
-                        sh(script: """mkdir -p logs
+                        sh(script: '''mkdir -p logs
                                       python setup.py build -b build | tee logs/build.log
-                                      """
+                                      '''
                         )
                     }
                     post{
                         always{
-                            archiveArtifacts artifacts: "logs/build.log"
+                            archiveArtifacts artifacts: 'logs/build.log'
                         }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
                                     [pattern: 'build/', type: 'INCLUDE']
                                 ]
                             )
@@ -176,13 +176,13 @@ pipeline {
 
                     }
                 }
-                stage("Building Sphinx Documentation"){
+                stage('Building Sphinx Documentation'){
                     steps {
                         sh(
-                            label: "Building docs on ${env.NODE_NAME}",
-                            script: """mkdir -p logs
+                            label: 'Building docs',
+                            script: '''mkdir -p logs
                                        python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log
-                                       """
+                                       '''
                         )
                     }
                     post{
@@ -192,22 +192,16 @@ pipeline {
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            script{
-                                def DOC_ZIP_FILENAME = "${props.Name}-${props.Version}.doc.zip"
-                                zip archive: true, dir: "build/docs/html", glob: '', zipFile: "dist/${DOC_ZIP_FILENAME}"
-                                stash includes: "dist/${DOC_ZIP_FILENAME},build/docs/html/**", name: 'DOCS_ARCHIVE'
-                            }
-                        }
-                        failure{
-                            echo "Failed to build Python package"
+                            zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                            stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                         }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: "dist/", type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
                                     [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: "HathiZip.dist-info/", type: 'INCLUDE'],
+                                    [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
                                 ]
                             )
                         }
@@ -215,14 +209,14 @@ pipeline {
                 }
             }
         }
-        stage("Checks") {
+        stage('Checks') {
             when{
                 equals expected: true, actual: params.RUN_CHECKS
             }
             stages{
-                stage("Code Quality"){
+                stage('Code Quality'){
                     stages{
-                        stage("Run test"){
+                        stage('Run test'){
                             agent {
                                 dockerfile {
                                     filename DEFAULT_AGENT.filename
@@ -231,7 +225,7 @@ pipeline {
                                 }
                             }
                             stages{
-                                stage("Set up Tests"){
+                                stage('Set up Tests'){
                                     steps{
                                         sh '''mkdir -p logs
                                               python setup.py build
@@ -239,11 +233,11 @@ pipeline {
                                               '''
                                     }
                                 }
-                                stage("Run Tests"){
+                                stage('Run Tests'){
                                     parallel{
-                                        stage("PyTest"){
+                                        stage('PyTest'){
                                             steps{
-                                                sh(label: "Running pytest",
+                                                sh(label: 'Running pytest',
                                                     script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
                                                 )
                                             }
@@ -254,53 +248,40 @@ pipeline {
                                                 }
                                             }
                                         }
-                                        stage("Run Pylint Static Analysis") {
+                                        stage('Run Pylint Static Analysis') {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                                    sh(label: "Running pylint",
-                                                        script: '''pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
-                                                                   '''
-
+                                                    sh(label: 'Running pylint',
+                                                        script: 'pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
                                                     )
                                                 }
                                                 sh(
                                                     script: 'pylint hathizip -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
-                                                    label: "Running pylint for sonarqube",
+                                                    label: 'Running pylint for sonarqube',
                                                     returnStatus: true
                                                 )
                                             }
                                             post{
                                                 always{
                                                     recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                    stash includes: "reports/pylint_issues.txt,reports/pylint.txt", name: 'PYLINT_REPORT'
+                                                    stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
                                                 }
                                             }
                                         }
-                                        stage("Doctest"){
+                                        stage('Doctest'){
                                             steps{
-                                                unstash "DOCS_ARCHIVE"
+                                                unstash 'DOCS_ARCHIVE'
                                                 sh 'coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v'
                                             }
                                             post{
                                                 failure{
-                                                    sh "ls -R build/docs/"
-                                                }
-                                                cleanup{
-                                                    cleanWs(
-                                                        deleteDirs: true,
-                                                        patterns: [
-                                                            [pattern: 'build/', type: 'INCLUDE'],
-                                                            [pattern: 'dist/', type: 'INCLUDE'],
-                                                            [pattern: 'logs/', type: 'INCLUDE'],
-                                                            [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
+                                                    sh 'ls -R build/docs/'
                                                 }
                                             }
                                         }
-                                        stage("MyPy"){
+                                        stage('MyPy'){
                                             steps{
-                                                sh "mkdir -p reports/mypy && mkdir -p logs"
+                                                sh 'mkdir -p reports/mypy && mkdir -p logs'
                                                 catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
                                                     sh(
                                                         script: "mypy -p hathizip --html-report ${WORKSPACE}/reports/mypy/mypy_html | tee logs/mypy.log"
@@ -315,12 +296,11 @@ pipeline {
 
                                             }
                                         }
-                                        stage("Run Flake8 Static Analysis") {
+                                        stage('Run Flake8 Static Analysis') {
                                             steps{
                                                 catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
-                                                    sh(label: "Running flake8",
-                                                       script: """flake8 hathizip --tee --output-file=logs/flake8.log
-                                                                  """
+                                                    sh(label: 'Running flake8',
+                                                       script: 'flake8 hathizip --tee --output-file=logs/flake8.log'
                                                     )
                                                 }
                                             }
@@ -328,17 +308,6 @@ pipeline {
                                                 always {
                                                     stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
                                                     recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                                }
-                                                cleanup{
-                                                    cleanWs(
-                                                        deleteDirs: true,
-                                                        patterns: [
-                                                            [pattern: 'build/', type: 'INCLUDE'],
-                                                            [pattern: 'dist/', type: 'INCLUDE'],
-                                                            [pattern: 'logs/', type: 'INCLUDE'],
-                                                            [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
                                                 }
                                             }
                                         }
@@ -437,7 +406,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Run Tox"){
+                stage('Run Tox'){
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
@@ -445,21 +414,21 @@ pipeline {
                         script{
                             def windowsJobs
                             def linuxJobs
-                            stage("Scanning Tox Environments"){
+                            stage('Scanning Tox Environments'){
                                 parallel(
-                                    "Linux":{
+                                    'Linux':{
                                         linuxJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: "Tox Linux",
-                                                label: "linux && docker",
-                                                dockerfile: "ci/docker/python/linux/tox/Dockerfile",
+                                                envNamePrefix: 'Tox Linux',
+                                                label: 'linux && docker',
+                                                dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                             )
                                     },
-                                    "Windows":{
+                                    'Windows':{
                                         windowsJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: "Tox Windows",
+                                                envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker',
-                                                dockerfile: "ci/docker/python/windows/tox/Dockerfile",
+                                                dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                                                 dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                             )
                                     },
@@ -473,11 +442,11 @@ pipeline {
             }
         }
 
-        stage("Packaging") {
+        stage('Packaging') {
             stages{
-                stage("Create"){
+                stage('Create'){
                     parallel {
-                        stage("Source and Wheel formats"){
+                        stage('Source and Wheel formats'){
                             agent {
                                 dockerfile {
                                     filename DEFAULT_AGENT.filename
@@ -487,14 +456,14 @@ pipeline {
                             }
                             steps{
                                 timeout(5){
-                                    sh "python setup.py sdist -d dist bdist_wheel -d dist"
+                                    sh 'python setup.py sdist -d dist bdist_wheel -d dist'
                                 }
 
                             }
                             post{
                                 success{
-                                    archiveArtifacts artifacts: "dist/*.whl,dist/*.tar.gz,dist/*.zip", fingerprint: true
-                                    stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: "dist"
+                                    archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
+                                    stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'dist'
                                 }
                                 cleanup{
                                     cleanWs(
@@ -509,7 +478,7 @@ pipeline {
                                 }
                             }
                         }
-                        stage("Windows CX_Freeze MSI"){
+                        stage('Windows CX_Freeze MSI'){
                             agent {
                                 dockerfile {
                                     filename 'ci/docker/python/windows/build/msvc/Dockerfile'
@@ -522,14 +491,14 @@ pipeline {
                             }
                             steps{
                                 timeout(15){
-                                    bat "python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d dist"
+                                    bat 'python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d dist'
                                 }
                             }
                             post{
                                 success{
-                                    stash includes: "dist/*.msi", name: "msi"
-                                    archiveArtifacts artifacts: "dist/*.msi", fingerprint: true
-                                    }
+                                    stash includes: 'dist/*.msi', name: 'msi'
+                                    archiveArtifacts artifacts: 'dist/*.msi', fingerprint: true
+                                }
                                 cleanup{
                                     cleanWs(
                                         deleteDirs: true,
@@ -545,7 +514,7 @@ pipeline {
                         }
                     }
                 }
-                stage("Testing"){
+                stage('Testing'){
                     when{
                         equals expected: true, actual: params.TEST_PACKAGES
                         beforeAgent true
@@ -555,7 +524,7 @@ pipeline {
                             def packages
                             node(){
                                 checkout scm
-                                packages = load "ci/jenkins/scripts/packaging.groovy"
+                                packages = load 'ci/jenkins/scripts/packaging.groovy'
 
                             }
                             def tests = [
@@ -794,7 +763,7 @@ pipeline {
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'dist',
                                             pythonVersion: '3.8',
-                                            toxExec: "venv/bin/tox",
+                                            toxExec: 'venv/bin/tox',
                                             testSetup: {
                                                 checkout scm
                                                 unstash 'dist'
@@ -807,7 +776,7 @@ pipeline {
                                                 )
                                             },
                                             testTeardown: {
-                                                sh "rm -r venv/"
+                                                sh 'rm -r venv/'
                                             }
 
                                         )
@@ -820,7 +789,7 @@ pipeline {
                                             glob: 'dist/*.whl',
                                             stash: 'dist',
                                             pythonVersion: '3.8',
-                                            toxExec: "venv/bin/tox",
+                                            toxExec: 'venv/bin/tox',
                                             testSetup: {
                                                 checkout scm
                                                 unstash 'dist'
@@ -833,7 +802,7 @@ pipeline {
                                                 )
                                             },
                                             testTeardown: {
-                                                sh "rm -r venv/"
+                                                sh 'rm -r venv/'
                                             }
 
                                         )
@@ -846,7 +815,7 @@ pipeline {
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'dist',
                                             pythonVersion: '3.9',
-                                            toxExec: "venv/bin/tox",
+                                            toxExec: 'venv/bin/tox',
                                             testSetup: {
                                                 checkout scm
                                                 unstash 'dist'
@@ -859,7 +828,7 @@ pipeline {
                                                 )
                                             },
                                             testTeardown: {
-                                                sh "rm -r venv/"
+                                                sh 'rm -r venv/'
                                             }
 
                                         )
@@ -872,7 +841,7 @@ pipeline {
                                             glob: 'dist/*.whl',
                                             stash: 'dist',
                                             pythonVersion: '3.9',
-                                            toxExec: "venv/bin/tox",
+                                            toxExec: 'venv/bin/tox',
                                             testSetup: {
                                                 checkout scm
                                                 unstash 'dist'
@@ -885,7 +854,7 @@ pipeline {
                                                 )
                                             },
                                             testTeardown: {
-                                                sh "rm -r venv/"
+                                                sh 'rm -r venv/'
                                             }
 
                                         )
@@ -900,27 +869,27 @@ pipeline {
                 }
             }
         }
-        stage("Deploying to Devpi") {
+        stage('Deploying to Devpi') {
             when {
                 allOf{
                     anyOf{
                         equals expected: true, actual: params.DEPLOY_DEVPI
                     }
                     anyOf {
-                        equals expected: "master", actual: env.BRANCH_NAME
-                        equals expected: "dev", actual: env.BRANCH_NAME
+                        equals expected: 'master', actual: env.BRANCH_NAME
+                        equals expected: 'dev', actual: env.BRANCH_NAME
                     }
                 }
                 beforeAgent true
                 beforeOptions true
             }
             options{
-                lock("HathiZip-devpi")
+                lock('HathiZip-devpi')
             }
 
             agent none
             stages{
-                stage("Uploading to DevPi Staging"){
+                stage('Uploading to DevPi Staging'){
                     agent {
                         dockerfile {
                             additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}"
@@ -930,8 +899,8 @@ pipeline {
                     }
                     steps {
                         timeout(5){
-                            unstash "DOCS_ARCHIVE"
-                            unstash "dist"
+                            unstash 'DOCS_ARCHIVE'
+                            unstash 'dist'
                             script{
                                 devpi.upload(
                                         server: 'https://devpi.library.illinois.edu',
@@ -947,8 +916,8 @@ pipeline {
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
-                                    [pattern: "dist/", type: 'INCLUDE'],
-                                    [pattern: "HathiZip.dist-info/", type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                    [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
                                     [pattern: 'build/', type: 'INCLUDE']
                                 ]
                             )
@@ -973,7 +942,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py36'
@@ -995,7 +964,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py36'
@@ -1017,7 +986,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py36'
@@ -1039,7 +1008,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py36'
@@ -1062,7 +1031,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py37'
@@ -1084,7 +1053,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py37'
@@ -1106,7 +1075,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py37'
@@ -1128,7 +1097,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py37'
@@ -1151,7 +1120,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py38'
@@ -1174,7 +1143,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py38'
@@ -1197,7 +1166,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py38'
@@ -1219,7 +1188,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py38'
@@ -1227,7 +1196,7 @@ pipeline {
                                     )
                                 }
                             },
-                            "Test Python 3.8: wheel Mac": {
+                            'Test Python 3.8: wheel Mac': {
                                 script{
                                     devpi.testDevpiPackage2(
                                         agent: [
@@ -1243,12 +1212,12 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             setup: {
                                                 sh(
-                                                    label:"Installing Devpi client",
+                                                    label:'Installing Devpi client',
                                                     script: '''python3 -m venv venv
                                                                 venv/bin/python -m pip install pip --upgrade
                                                                 venv/bin/python -m pip install devpi_client
@@ -1263,7 +1232,7 @@ pipeline {
                                     )
                                 }
                             },
-                            "Test Python 3.8: sdist Mac": {
+                            'Test Python 3.8: sdist Mac': {
                                 script{
                                     devpi.testDevpiPackage2(
                                         agent: [
@@ -1279,12 +1248,12 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             setup: {
                                                 sh(
-                                                    label:"Installing Devpi client",
+                                                    label:'Installing Devpi client',
                                                     script: '''python3 -m venv venv
                                                                 venv/bin/python -m pip install pip --upgrade
                                                                 venv/bin/python -m pip install devpi_client
@@ -1299,7 +1268,7 @@ pipeline {
                                     )
                                 }
                             },
-                            "Test Python 3.9: wheel Mac": {
+                            'Test Python 3.9: wheel Mac': {
                                 script{
                                     devpi.testDevpiPackage2(
                                         agent: [
@@ -1315,12 +1284,12 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             setup: {
                                                 sh(
-                                                    label:"Installing Devpi client",
+                                                    label:'Installing Devpi client',
                                                     script: '''python3 -m venv venv
                                                                 venv/bin/python -m pip install pip --upgrade
                                                                 venv/bin/python -m pip install devpi_client
@@ -1351,12 +1320,12 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             setup: {
                                                 sh(
-                                                    label:"Installing Devpi client",
+                                                    label:'Installing Devpi client',
                                                     script: '''python3 -m venv venv
                                                                 venv/bin/python -m pip install pip --upgrade
                                                                 venv/bin/python -m pip install devpi_client
@@ -1386,7 +1355,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py39'
@@ -1409,7 +1378,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py39'
@@ -1432,7 +1401,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "tar.gz"
+                                            selector: 'tar.gz'
                                         ],
                                         test:[
                                             toxEnv: 'py39'
@@ -1454,7 +1423,7 @@ pipeline {
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
-                                            selector: "whl"
+                                            selector: 'whl'
                                         ],
                                         test:[
                                             toxEnv: 'py39'
@@ -1549,11 +1518,11 @@ pipeline {
 //                         }
 //                     }
 //                 }
-                stage("Deploy to DevPi Production") {
+                stage('Deploy to DevPi Production') {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-                            branch "master"
+                            branch 'master'
                         }
                         beforeAgent true
                         beforeInput true
@@ -1605,7 +1574,7 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
+                            docker.build('hathizip:devpi',"-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
                                 devpi.removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
@@ -1620,19 +1589,19 @@ pipeline {
                 }
             }
         }
-        stage("Deploy"){
+        stage('Deploy'){
             parallel{
-                stage("Deploy to SCCM") {
+                stage('Deploy to SCCM') {
                     when{
                         allOf{
                             equals expected: true, actual: params.DEPLOY_SCCM
-                            branch "master"
+                            branch 'master'
                         }
                         beforeAgent true
                         beforeInput true
                     }
                     agent{
-                        label "linux"
+                        label 'linux'
                     }
                     input {
                         message 'Deploy to production?'
@@ -1647,7 +1616,7 @@ pipeline {
                     }
 
                     steps {
-                        unstash "msi"
+                        unstash 'msi'
                         deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
                         deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
 
@@ -1655,17 +1624,17 @@ pipeline {
                     post {
                         success {
                             script{
-                                def deployment_request = requestDeploy this, "deployment.yml"
+                                def deployment_request = requestDeploy this, 'deployment.yml'
                                 echo deployment_request
-                                writeFile file: "deployment_request.txt", text: deployment_request
-                                archiveArtifacts artifacts: "deployment_request.txt"
+                                writeFile file: 'deployment_request.txt', text: deployment_request
+                                archiveArtifacts artifacts: 'deployment_request.txt'
                             }
                         }
                     }
                 }
-                stage("Update online documentation") {
+                stage('Update online documentation') {
                     agent {
-                        label "Linux"
+                        label 'Linux'
                     }
                     when {
                         equals expected: true, actual: params.UPDATE_DOCS
@@ -1679,7 +1648,7 @@ pipeline {
                         }
                     }
                     steps {
-                        updateOnlineDocs url_subdomain: "${URL_SUBFOLDER}", stash_name: "HTML Documentation"
+                        updateOnlineDocs url_subdomain: URL_SUBFOLDER, stash_name: "HTML Documentation"
 
                     }
                 }
