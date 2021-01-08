@@ -929,7 +929,7 @@ pipeline {
                         parallel(
                             'Test Python 3.6: sdist Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -952,7 +952,7 @@ pipeline {
                             },
                             'Test Python 3.6: wheel Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -974,7 +974,7 @@ pipeline {
                             },
                             'Test Python 3.6: sdist Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
@@ -996,7 +996,7 @@ pipeline {
                             },
                             'Test Python 3.6: wheel Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
@@ -1018,7 +1018,7 @@ pipeline {
                             },
                             'Test Python 3.7: sdist Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -1041,7 +1041,7 @@ pipeline {
                             },
                             'Test Python 3.7: wheel Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -1063,7 +1063,7 @@ pipeline {
                             },
                             'Test Python 3.7: sdist Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
@@ -1085,7 +1085,7 @@ pipeline {
                             },
                             'Test Python 3.7: wheel Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
@@ -1107,7 +1107,7 @@ pipeline {
                             },
                             'Test Python 3.8: sdist Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -1130,7 +1130,7 @@ pipeline {
                             },
                             'Test Python 3.8: wheel Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -1153,7 +1153,7 @@ pipeline {
                             },
                             'Test Python 3.8: sdist Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
@@ -1176,7 +1176,7 @@ pipeline {
                             },
                             'Test Python 3.8: wheel Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
@@ -1198,7 +1198,7 @@ pipeline {
                             },
                             'Test Python 3.8: wheel Mac': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.8'
                                         ],
@@ -1234,7 +1234,7 @@ pipeline {
                             },
                             'Test Python 3.8: sdist Mac': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.8'
                                         ],
@@ -1270,7 +1270,7 @@ pipeline {
                             },
                             'Test Python 3.9: wheel Mac': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.9'
                                         ],
@@ -1306,7 +1306,7 @@ pipeline {
                             },
                             'Test Python 3.9: sdist Mac': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.9'
                                         ],
@@ -1342,7 +1342,7 @@ pipeline {
                             },
                             'Test Python 3.9: sdist Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -1365,7 +1365,7 @@ pipeline {
                             },
                             'Test Python 3.9: wheel Linux': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
@@ -1388,7 +1388,7 @@ pipeline {
                             },
                             'Test Python 3.9: sdist Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
@@ -1411,7 +1411,7 @@ pipeline {
                             },
                             'Test Python 3.9: wheel Windows': {
                                 script{
-                                    devpi.testDevpiPackage2(
+                                    devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',

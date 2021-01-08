@@ -312,7 +312,7 @@ def testDevpiPackage2(args=[:]){
     }
 }
 return [
-    testDevpiPackage2: this.&testDevpiPackage2,
+    testDevpiPackage: this.&testDevpiPackage2,
     removePackage: this.&removePackage,
     pushPackageToIndex: this.&pushPackageToIndex,
     upload: this.&upload
