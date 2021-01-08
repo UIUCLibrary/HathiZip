@@ -1151,6 +1151,60 @@ pipeline {
                                         ]
                                     )
                                 }
+                            },
+                            'Test Python 3.9: sdist Windows': {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
+                                                label: 'windows && docker'
+
+                                            ]
+                                        ],
+                                        devpi: [
+                                            index: getDevPiStagingIndex(),
+                                            server: 'https://devpi.library.illinois.edu',
+                                            credentialsId: 'DS_devpi',
+                                        ],
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "tar.gz"
+                                        ],
+                                        test:[
+                                            toxEnv: 'py39'
+                                        ]
+                                    )
+                                }
+                            },
+                            'Test Python 3.9: wheel Windows': {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
+                                                label: 'windows && docker'
+                                            ]
+                                        ],
+                                        devpi: [
+                                            index: getDevPiStagingIndex(),
+                                            server: 'https://devpi.library.illinois.edu',
+                                            credentialsId: 'DS_devpi',
+
+                                        ],
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "whl"
+                                        ],
+                                        test:[
+                                            toxEnv: 'py39'
+                                        ]
+                                    )
+                                }
                             }
                         )
                     }
