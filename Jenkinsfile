@@ -1104,7 +1104,7 @@ pipeline {
                                     )
                                 }
                             },
-                            'Test Python 3.9: sdist linux': {
+                            'Test Python 3.9: sdist Linux': {
                                 script{
                                     devpi.testDevpiPackage2(
                                         agent: [
@@ -1127,7 +1127,7 @@ pipeline {
                                     )
                                 }
                             },
-                            'Test Python 3.9: wheel linux': {
+                            'Test Python 3.9: wheel Linux': {
                                 script{
                                     devpi.testDevpiPackage2(
                                         agent: [
