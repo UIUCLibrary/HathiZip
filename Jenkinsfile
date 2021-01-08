@@ -10,6 +10,10 @@ CONFIGURATIONS = [
     "3.8": [
         test_docker_image: "python:3.8",
         tox_env: "py38"
+        ],
+    "3.9": [
+        test_docker_image: "python:3.9",
+        tox_env: "py39"
         ]
 ]
 
@@ -18,12 +22,27 @@ def DEFAULT_AGENT = [
     label: 'linux && docker',
     additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
 ]
+def DOCKER_PLATFORM_BUILD_ARGS = [
+    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
+    windows: ''
+]
 
 def tox
+
+def getDevPiStagingIndex(){
+
+    if (env.TAG_NAME?.trim()){
+        return 'tag_staging'
+    } else{
+        return "${env.BRANCH_NAME}_staging"
+    }
+}
+
 
 node(){
     checkout scm
     tox = load("ci/jenkins/scripts/tox.groovy")
+    devpi = load('ci/jenkins/scripts/devpi.groovy')
 }
 SONARQUBE_CREDENTIAL_ID = "sonartoken-hathizip"
 
@@ -96,7 +115,6 @@ def props = get_props()
 pipeline {
     agent none
     libraries {
-      lib('devpi')
       lib('PythonHelpers')
       lib('ds-utils')
     }
@@ -433,7 +451,7 @@ pipeline {
                                                 envNamePrefix: "Tox Windows",
                                                 label: 'windows && docker',
                                                 dockerfile: "ci/docker/python/windows/tox/Dockerfile",
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                             )
                                     },
                                     failFast: true
@@ -538,7 +556,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                    
                                                 ]
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
@@ -552,7 +571,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
@@ -566,7 +585,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
@@ -580,7 +599,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
@@ -650,7 +669,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
                                             glob: 'dist/*.whl',
@@ -664,7 +683,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
                                             glob: 'dist/*.whl',
@@ -678,7 +697,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
                                             glob: 'dist/*.whl',
@@ -692,7 +711,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE'
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
                                             glob: 'dist/*.whl',
@@ -891,34 +910,28 @@ pipeline {
             }
 
             agent none
-            environment{
-                DEVPI = credentials("DS_devpi")
-            }
             stages{
                 stage("Uploading to DevPi Staging"){
-
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
-                            label 'linux&&docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                          }
+                            additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}"
+                            filename 'ci/docker/python/linux/tox/Dockerfile'
+                            label 'linux && docker'
+                        }
                     }
                     steps {
                         timeout(5){
                             unstash "DOCS_ARCHIVE"
                             unstash "dist"
-                            sh(
-                                    label: "Connecting to DevPi Server",
-                                    script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
-                                )
-                            sh(
-                                label: "Uploading to DevPi Staging",
-                                script: """devpi use /${env.DEVPI_USR}/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi
-                                           devpi upload --from-dir dist --clientdir ${WORKSPACE}/devpi"""
-                            )
+                            script{
+                                devpi.upload(
+                                        server: 'https://devpi.library.illinois.edu',
+                                        credentialsId: 'DS_devpi',
+                                        index: getDevPiStagingIndex(),
+                                        clientDir: './devpi'
+                                    )
+                            }
                         }
-
                     }
                     post{
                         cleanup{
@@ -934,46 +947,64 @@ pipeline {
                     }
                 }
 //                 TODO: test on mac
-                stage("Test DevPi packages") {
+                stage('Test DevPi packages') {
                     matrix {
                         axes {
                             axis {
-                                name 'FORMAT'
-                                values 'zip', "whl"
+                                name 'PLATFORM'
+                                values(
+                                    'windows',
+                                    'linux'
+                                    )
                             }
                             axis {
                                 name 'PYTHON_VERSION'
-                                values '3.8', "3.7", '3.6'
+                                values(
+                                    '3.7',
+                                    '3.8',
+                                    '3.9'
+                                    )
                             }
                         }
                         agent {
-                          dockerfile {
-                            additionalBuildArgs "--build-arg PYTHON_DOCKER_IMAGE_BASE=${CONFIGURATIONS[PYTHON_VERSION].test_docker_image}"
-                            filename 'ci/docker/deploy/devpi/test/windows/Dockerfile'
-                            label 'windows && docker'
-                          }
+                            dockerfile {
+                                additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
+                                filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
+                                label "${PLATFORM} && docker"
+                            }
                         }
                         stages{
-                            stage("Testing DevPi Package"){
+                            stage('Testing DevPi Package wheel'){
                                 steps{
                                     timeout(10){
                                         script{
-                                            bat "devpi use https://devpi.library.illinois.edu --clientdir certs\\ && devpi login %DEVPI_USR% --password %DEVPI_PSW% --clientdir certs\\ && devpi use ${env.BRANCH_NAME}_staging --clientdir certs\\"
-                                            bat "devpi test --index ${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} -s ${FORMAT} --clientdir certs\\ -e ${CONFIGURATIONS[PYTHON_VERSION].tox_env} -v"
+                                            devpi.testDevpiPackage(
+                                                devpiIndex: getDevPiStagingIndex(),
+                                                server: 'https://devpi.library.illinois.edu',
+                                                credentialsId: 'DS_devpi',
+                                                pkgName: props.Name,
+                                                pkgVersion: props.Version,
+                                                pkgSelector: 'whl',
+                                                toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
+                                            )
                                         }
                                     }
                                 }
-                                post{
-                                    cleanup{
-                                        cleanWs(
-                                            deleteDirs: true,
-                                            patterns: [
-                                                [pattern: "dist/", type: 'INCLUDE'],
-                                                [pattern: "certs/", type: 'INCLUDE'],
-                                                [pattern: "HathiZip.dist-info/", type: 'INCLUDE'],
-                                                [pattern: 'build/', type: 'INCLUDE']
-                                            ]
-                                        )
+                            }
+                            stage('Testing DevPi sdist Package'){
+                                steps{
+                                    timeout(10){
+                                        script{
+                                            devpi.testDevpiPackage(
+                                                devpiIndex: getDevPiStagingIndex(),
+                                                server: 'https://devpi.library.illinois.edu',
+                                                credentialsId: 'DS_devpi',
+                                                pkgName: props.Name,
+                                                pkgVersion: props.Version,
+                                                pkgSelector: 'tar.gz',
+                                                toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -994,38 +1025,41 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            filename 'ci/docker/deploy/devpi/deploy/Dockerfile'
-                            label 'linux&&docker'
-                            additionalBuildArgs '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)'
-                          }
+                            additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}"
+                            filename 'ci/docker/python/linux/tox/Dockerfile'
+                            label 'linux && docker'
+                        }
                     }
                     input {
                         message 'Release to DevPi Production?'
                     }
                     steps {
                         script{
-                            sh(label: "Pushing to production index",
-                               script: """devpi use https://devpi.library.illinois.edu --clientdir ./devpi
-                                          devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ./devpi
-                                          devpi push --index DS_Jenkins/${env.BRANCH_NAME}_staging ${props.Name}==${props.Version} production/release --clientdir ./devpi
-                                       """
+                            devpi.pushPackageToIndex(
+                                pkgName: props.Name,
+                                pkgVersion: props.Version,
+                                server: 'https://devpi.library.illinois.edu',
+                                indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                indexDestination: 'production/release',
+                                credentialsId: 'DS_devpi'
                             )
                         }
                     }
                 }
-
             }
             post{
                 success{
                     node('linux && docker') {
                        script{
-                            docker.build("hathizip:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                sh(
-                                    label: "Connecting to DevPi Server",
-                                    script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
-                                )
-                                sh "devpi use DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-                                sh "devpi push ${props.Name}==${props.Version} DS_Jenkins/${env.BRANCH_NAME} --clientdir ${WORKSPACE}/devpi"
+                            docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
+                                devpi.pushPackageToIndex(
+                                        pkgName: props.Name,
+                                        pkgVersion: props.Version,
+                                        server: 'https://devpi.library.illinois.edu',
+                                        indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                        indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
+                                        credentialsId: 'DS_devpi'
+                                    )
                             }
                        }
                     }
@@ -1033,13 +1067,15 @@ pipeline {
                 cleanup{
                     node('linux && docker') {
                        script{
-                            docker.build("hathizip:devpi",'-f ./ci/docker/deploy/devpi/deploy/Dockerfile --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) .').inside{
-                                sh(
-                                    label: "Connecting to DevPi Server",
-                                    script: 'devpi use https://devpi.library.illinois.edu --clientdir ${WORKSPACE}/devpi && devpi login $DEVPI_USR --password $DEVPI_PSW --clientdir ${WORKSPACE}/devpi'
+                            docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
+                                devpi.removePackage(
+                                    pkgName: props.Name,
+                                    pkgVersion: props.Version,
+                                    index: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                    server: 'https://devpi.library.illinois.edu',
+                                    credentialsId: 'DS_devpi',
+
                                 )
-                                sh "devpi use /DS_Jenkins/${env.BRANCH_NAME}_staging --clientdir ${WORKSPACE}/devpi"
-                                sh "devpi remove -y ${props.Name}==${props.Version} --clientdir ${WORKSPACE}/devpi"
                             }
                        }
                     }
