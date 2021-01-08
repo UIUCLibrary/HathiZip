@@ -102,6 +102,7 @@ pipeline {
     }
     parameters {
         string(name: "PROJECT_NAME", defaultValue: "HathiTrust Zip for Submit", description: "Name given to the project")
+        booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: "Run checks on code")
         booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: "Test packages")
@@ -185,7 +186,10 @@ pipeline {
                 }
             }
         }
-        stage("Tests") {
+        stage("Checks") {
+            when{
+                equals expected: true, actual: params.RUN_CHECKS
+            }
             stages{
                 stage("Code Quality"){
                     stages{
