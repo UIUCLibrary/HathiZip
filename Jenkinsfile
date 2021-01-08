@@ -958,8 +958,97 @@ pipeline {
 //                 TODO: test on mac
                 stage('Test DevPi mac packages') {
                     steps{
-
                         parallel(
+                            'Test Python 3.7: sdist Linux': {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}",
+                                                label: 'linux && docker'
+
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "tar.gz"
+                                        ],
+                                        test:[
+                                            toxEnv: 'py37'
+                                        ]
+                                    )
+                                }
+                            },
+                            'Test Python 3.7: wheel Linux': {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}",
+                                                label: 'linux && docker'
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "whl"
+                                        ],
+                                        test:[
+                                            toxEnv: 'py37'
+                                        ]
+                                    )
+                                }
+                            },
+                            'Test Python 3.7: sdist Windows': {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
+                                                label: 'windows && docker'
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "tar.gz"
+                                        ],
+                                        test:[
+                                            toxEnv: 'py37'
+                                        ]
+                                    )
+                                }
+                            },
+                            'Test Python 3.7: wheel Windows': {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            dockerfile: [
+                                                filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
+                                                label: 'windows && docker'
+                                            ]
+                                        ],
+                                        devpi: DEVPI_CONFIG,
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "whl"
+                                        ],
+                                        test:[
+                                            toxEnv: 'py37'
+                                        ]
+                                    )
+                                }
+                            },
+//                             ============
                             'Test Python 3.8: sdist Linux': {
                                 script{
                                     devpi.testDevpiPackage2(
