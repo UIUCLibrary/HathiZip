@@ -926,9 +926,9 @@ pipeline {
                 }
                 stage('Test DevPi packages') {
                     steps{
-                        parallel(
-                            'Test Python 3.6: sdist Linux': {
-                                script{
+                        script{
+                            parallel(
+                                'Test Python 3.6: sdist Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -948,10 +948,8 @@ pipeline {
                                             toxEnv: 'py36'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.6: wheel Linux': {
-                                script{
+                                },
+                                'Test Python 3.6: wheel Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -970,10 +968,8 @@ pipeline {
                                             toxEnv: 'py36'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.6: sdist Windows': {
-                                script{
+                                },
+                                'Test Python 3.6: sdist Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -992,10 +988,8 @@ pipeline {
                                             toxEnv: 'py36'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.6: wheel Windows': {
-                                script{
+                                },
+                                'Test Python 3.6: wheel Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1014,10 +1008,8 @@ pipeline {
                                             toxEnv: 'py36'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.7: sdist Linux': {
-                                script{
+                                },
+                                'Test Python 3.7: sdist Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1037,10 +1029,8 @@ pipeline {
                                             toxEnv: 'py37'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.7: wheel Linux': {
-                                script{
+                                },
+                                'Test Python 3.7: wheel Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1059,10 +1049,8 @@ pipeline {
                                             toxEnv: 'py37'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.7: sdist Windows': {
-                                script{
+                                },
+                                'Test Python 3.7: sdist Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1081,10 +1069,8 @@ pipeline {
                                             toxEnv: 'py37'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.7: wheel Windows': {
-                                script{
+                                },
+                                'Test Python 3.7: wheel Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1103,10 +1089,8 @@ pipeline {
                                             toxEnv: 'py37'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.8: sdist Linux': {
-                                script{
+                                },
+                                'Test Python 3.8: sdist Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1126,10 +1110,8 @@ pipeline {
                                             toxEnv: 'py38'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.8: wheel Linux': {
-                                script{
+                                },
+                                'Test Python 3.8: wheel Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1149,10 +1131,8 @@ pipeline {
                                             toxEnv: 'py38'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.8: sdist Windows': {
-                                script{
+                                },
+                                'Test Python 3.8: sdist Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1172,10 +1152,8 @@ pipeline {
                                             toxEnv: 'py38'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.8: wheel Windows': {
-                                script{
+                                },
+                                'Test Python 3.8: wheel Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1194,10 +1172,8 @@ pipeline {
                                             toxEnv: 'py38'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.8: wheel Mac': {
-                                script{
+                                },
+                                'Test Python 3.8: wheel Mac': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.8'
@@ -1230,10 +1206,8 @@ pipeline {
                                             }
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.8: sdist Mac': {
-                                script{
+                                },
+                                'Test Python 3.8: sdist Mac': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.8'
@@ -1266,10 +1240,8 @@ pipeline {
                                             }
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.9: wheel Mac': {
-                                script{
+                                },
+                                'Test Python 3.9: wheel Mac': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.9'
@@ -1302,10 +1274,8 @@ pipeline {
                                             }
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.9: sdist Mac': {
-                                script{
+                                },
+                                'Test Python 3.9: sdist Mac': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             label: 'mac && python3.9'
@@ -1338,10 +1308,8 @@ pipeline {
                                             }
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.9: sdist Linux': {
-                                script{
+                                },
+                                'Test Python 3.9: sdist Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1361,10 +1329,8 @@ pipeline {
                                             toxEnv: 'py39'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.9: wheel Linux': {
-                                script{
+                                },
+                                'Test Python 3.9: wheel Linux': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1384,10 +1350,8 @@ pipeline {
                                             toxEnv: 'py39'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.9: sdist Windows': {
-                                script{
+                                },
+                                'Test Python 3.9: sdist Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1407,10 +1371,8 @@ pipeline {
                                             toxEnv: 'py39'
                                         ]
                                     )
-                                }
-                            },
-                            'Test Python 3.9: wheel Windows': {
-                                script{
+                                },
+                                'Test Python 3.9: wheel Windows': {
                                     devpi.testDevpiPackage(
                                         agent: [
                                             dockerfile: [
@@ -1429,10 +1391,10 @@ pipeline {
                                             toxEnv: 'py39'
                                         ]
                                     )
-                                }
-                            },
+                                },
 
-                        )
+                            )
+                        }
                     }
                 }
                 stage('Deploy to DevPi Production') {
