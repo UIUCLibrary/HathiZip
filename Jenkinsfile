@@ -45,6 +45,7 @@ node(){
     devpi = load('ci/jenkins/scripts/devpi.groovy')
 }
 SONARQUBE_CREDENTIAL_ID = "sonartoken-hathizip"
+DEVPI_STAGING_INDEX = "DS_Jenkins/${getDevPiStagingIndex()}"
 
 defaultParameterValues = [
     USE_SONARQUBE: false
@@ -966,46 +967,52 @@ pipeline {
                                     )
                             }
                         }
-                        agent {
-                            dockerfile {
-                                additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
-                                filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
-                                label "${PLATFORM} && docker"
-                            }
-                        }
+//                         agent {
+//                             dockerfile {
+//                                 additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}"
+//                                 filename "ci/docker/python/${PLATFORM}/tox/Dockerfile"
+//                                 label "${PLATFORM} && docker"
+//                             }
+//                         }
                         stages{
                             stage('Testing DevPi Package wheel'){
                                 steps{
-                                    timeout(10){
-                                        script{
-                                            devpi.testDevpiPackage(
-                                                devpiIndex: getDevPiStagingIndex(),
-                                                server: 'https://devpi.library.illinois.edu',
-                                                credentialsId: 'DS_devpi',
-                                                pkgName: props.Name,
-                                                pkgVersion: props.Version,
-                                                pkgSelector: 'whl',
-                                                toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
-                                            )
-                                        }
-                                    }
+                                    echo "HERE"
                                 }
                             }
+//                             stage('Testing DevPi Package wheel'){
+//                                 steps{
+//                                     timeout(10){
+//                                         script{
+//                                             devpi.testDevpiPackage(
+//                                                 devpiIndex: getDevPiStagingIndex(),
+//                                                 server: 'https://devpi.library.illinois.edu',
+//                                                 credentialsId: 'DS_devpi',
+//                                                 pkgName: props.Name,
+//                                                 pkgVersion: props.Version,
+//                                                 pkgSelector: 'whl',
+//                                                 toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
+//                                             )
+//                                         }
+//                                     }
+//                                 }
+//                             }
                             stage('Testing DevPi sdist Package'){
                                 steps{
-                                    timeout(10){
-                                        script{
-                                            devpi.testDevpiPackage(
-                                                devpiIndex: getDevPiStagingIndex(),
-                                                server: 'https://devpi.library.illinois.edu',
-                                                credentialsId: 'DS_devpi',
-                                                pkgName: props.Name,
-                                                pkgVersion: props.Version,
-                                                pkgSelector: 'tar.gz',
-                                                toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
-                                            )
-                                        }
-                                    }
+                                    echo "HERE"
+//                                     timeout(10){
+//                                         script{
+//                                             devpi.testDevpiPackage(
+//                                                 devpiIndex: getDevPiStagingIndex(),
+//                                                 server: 'https://devpi.library.illinois.edu',
+//                                                 credentialsId: 'DS_devpi',
+//                                                 pkgName: props.Name,
+//                                                 pkgVersion: props.Version,
+//                                                 pkgSelector: 'tar.gz',
+//                                                 toxEnv: CONFIGURATIONS[PYTHON_VERSION].tox_env
+//                                             )
+//                                         }
+//                                     }
                                 }
                             }
                         }
@@ -1039,7 +1046,7 @@ pipeline {
                                 pkgName: props.Name,
                                 pkgVersion: props.Version,
                                 server: 'https://devpi.library.illinois.edu',
-                                indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                indexSource: DEVPI_STAGING_INDEX,
                                 indexDestination: 'production/release',
                                 credentialsId: 'DS_devpi'
                             )
@@ -1056,7 +1063,7 @@ pipeline {
                                         pkgName: props.Name,
                                         pkgVersion: props.Version,
                                         server: 'https://devpi.library.illinois.edu',
-                                        indexSource: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                        indexSource: DEVPI_STAGING_INDEX,
                                         indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
                                         credentialsId: 'DS_devpi'
                                     )
@@ -1071,7 +1078,7 @@ pipeline {
                                 devpi.removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
-                                    index: "DS_Jenkins/${getDevPiStagingIndex()}",
+                                    index: DEVPI_STAGING_INDEX,
                                     server: 'https://devpi.library.illinois.edu',
                                     credentialsId: 'DS_devpi',
 
