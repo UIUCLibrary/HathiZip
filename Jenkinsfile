@@ -978,7 +978,6 @@ pipeline {
                             stage('Testing DevPi Package wheel'){
                                 steps{
                                     script{
-                                        echo "HERE"
                                         devpi.getAgent(
                                             agent: [
                                                 dockerfile: [
@@ -988,7 +987,10 @@ pipeline {
 
                                                 ]
                                             ]
-                                        )
+                                        ){
+                                            echo "HERE"
+
+                                        }
                                     }
                                 }
                             }
