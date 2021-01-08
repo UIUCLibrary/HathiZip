@@ -303,9 +303,12 @@ def testDevpiPackage2(args=[:]){
 
     agent{
         testSetup()
-        logIntoDevpiServer(devpiExec, devpiServerUrl, credentialsId, clientDir)
-        runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv)
-        testTeardown()
+        try{
+            logIntoDevpiServer(devpiExec, devpiServerUrl, credentialsId, clientDir)
+            runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv)
+        } finally {
+            testTeardown()
+        }
     }
 }
 
