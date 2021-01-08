@@ -105,6 +105,7 @@ pipeline {
         booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
         booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: "Test packages")
+        booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
         booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
         booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
@@ -524,112 +525,7 @@ pipeline {
                                 packages = load "ci/jenkins/scripts/packaging.groovy"
 
                             }
-                            parallel(
-                                [
-                                    'Mac - Python 3.8: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                label: 'mac && python3.8',
-                                            ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8',
-                                            toxExec: "venv/bin/tox",
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh "rm -r venv/"
-                                            }
-
-                                        )
-                                    },
-                                    'Mac - Python 3.8: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                label: 'mac && python3.8',
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8',
-                                            toxExec: "venv/bin/tox",
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh "rm -r venv/"
-                                            }
-
-                                        )
-                                    },
-                                    'Mac - Python 3.9: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                label: 'mac && python3.9',
-                                            ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'dist',
-                                            pythonVersion: '3.9',
-                                            toxExec: "venv/bin/tox",
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh "rm -r venv/"
-                                            }
-
-                                        )
-                                    },
-                                    'Mac - Python 3.9: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                label: 'mac && python3.9',
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.9',
-                                            toxExec: "venv/bin/tox",
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh "rm -r venv/"
-                                            }
-
-                                        )
-                                    },
+                            def tests = [
                                     'Windows - Python 3.6: sdist': {
                                         packages.testPkg(
                                             agent: [
@@ -855,7 +751,116 @@ pipeline {
                                         )
                                     },
                                 ]
-                            )
+                            def macTests = [
+                                'Mac - Python 3.8: sdist': {
+                                        packages.testPkg(
+                                            agent: [
+                                                label: 'mac && python3.8',
+                                            ],
+                                            glob: 'dist/*.tar.gz,dist/*.zip',
+                                            stash: 'dist',
+                                            pythonVersion: '3.8',
+                                            toxExec: "venv/bin/tox",
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh "rm -r venv/"
+                                            }
+
+                                        )
+                                    },
+                                    'Mac - Python 3.8: wheel': {
+                                        packages.testPkg(
+                                            agent: [
+                                                label: 'mac && python3.8',
+                                            ],
+                                            glob: 'dist/*.whl',
+                                            stash: 'dist',
+                                            pythonVersion: '3.8',
+                                            toxExec: "venv/bin/tox",
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh "rm -r venv/"
+                                            }
+
+                                        )
+                                    },
+                                    'Mac - Python 3.9: sdist': {
+                                        packages.testPkg(
+                                            agent: [
+                                                label: 'mac && python3.9',
+                                            ],
+                                            glob: 'dist/*.tar.gz,dist/*.zip',
+                                            stash: 'dist',
+                                            pythonVersion: '3.9',
+                                            toxExec: "venv/bin/tox",
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh "rm -r venv/"
+                                            }
+
+                                        )
+                                    },
+                                    'Mac - Python 3.9: wheel': {
+                                        packages.testPkg(
+                                            agent: [
+                                                label: 'mac && python3.9',
+                                            ],
+                                            glob: 'dist/*.whl',
+                                            stash: 'dist',
+                                            pythonVersion: '3.9',
+                                            toxExec: "venv/bin/tox",
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh "rm -r venv/"
+                                            }
+
+                                        )
+                                    }
+                                ]
+                            if(params.TEST_PACKAGES_ON_MAC == true){
+                                tests = tests + macTests
+                            }
+                            parallel(tests)
                         }
                     }
                 }
