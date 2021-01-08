@@ -978,7 +978,7 @@ pipeline {
                             stage('Testing DevPi Package wheel'){
                                 steps{
                                     script{
-                                        devpi.getAgent(
+                                        def devpiAgent = devpi.getAgent(
                                             agent: [
                                                 dockerfile: [
                                                     filename: "ci/docker/python/${PLATFORM}/tox/Dockerfile",
@@ -987,7 +987,8 @@ pipeline {
 
                                                 ]
                                             ]
-                                        ){
+                                        )
+                                        devpiAgent{
                                             echo "HERE"
 
                                         }
