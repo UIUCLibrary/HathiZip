@@ -526,10 +526,62 @@ pipeline {
                             }
                             parallel(
                                 [
+                                    'Mac - Python 3.8: sdist': {
+                                        packages.testPkg(
+                                            agent: [
+                                                label: 'mac && python3.8',
+                                            ],
+                                            glob: 'dist/*.tar.gz,dist/*.zip',
+                                            stash: 'dist',
+                                            pythonVersion: '3.8',
+                                            toxExec: "venv/bin/tox",
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh "rm -r venv/"
+                                            }
+
+                                        )
+                                    },
+                                    'Mac - Python 3.8: wheel': {
+                                        packages.testPkg(
+                                            agent: [
+                                                label: 'mac && python3.8',
+                                            ],
+                                            glob: 'dist/*.whl',
+                                            stash: 'dist',
+                                            pythonVersion: '3.8',
+                                            toxExec: "venv/bin/tox",
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh "rm -r venv/"
+                                            }
+
+                                        )
+                                    },
                                     'Mac - Python 3.9: sdist': {
                                         packages.testPkg(
                                             agent: [
-                                                label: 'mac',
+                                                label: 'mac && python3.9',
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'dist',
@@ -555,7 +607,7 @@ pipeline {
                                     'Mac - Python 3.9: wheel': {
                                         packages.testPkg(
                                             agent: [
-                                                label: 'mac',
+                                                label: 'mac && python3.9',
                                             ],
                                             glob: 'dist/*.whl',
                                             stash: 'dist',
