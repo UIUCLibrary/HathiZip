@@ -992,12 +992,16 @@ pipeline {
                                                 server: 'https://devpi.library.illinois.edu',
                                                 credentialsId: 'DS_devpi',
 
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: "whl"
+                                            ],
+                                            test:[
+                                                toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION)
                                             ]
                                         )
-//                                         devpiAgent{
-//                                             echo "HERE"
-//
-//                                         }
                                     }
                                 }
                             }
@@ -1020,7 +1024,33 @@ pipeline {
 //                             }
                             stage('Testing DevPi sdist Package'){
                                 steps{
-                                    echo "HERE"
+                                    script{
+                                        devpi.testDevpiPackage2(
+                                            agent: [
+                                                dockerfile: [
+                                                    filename: "ci/docker/python/${PLATFORM}/tox/Dockerfile",
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}",
+                                                    label: "${PLATFORM} && docker"
+
+                                                ]
+                                            ],
+                                            devpi: [
+                                                index: getDevPiStagingIndex(),
+                                                server: 'https://devpi.library.illinois.edu',
+                                                credentialsId: 'DS_devpi',
+
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: "tar.gz"
+                                            ],
+                                            test:[
+                                                toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION)
+                                            ]
+                                        )
+                                    }
+//                                 }
 //                                     timeout(10){
 //                                         script{
 //                                             devpi.testDevpiPackage(

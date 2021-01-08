@@ -263,32 +263,46 @@ def logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir){
         }
     }
 }
+
+def runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv){
+    if(isUnix()){
+        sh(
+            label: "Running tests on Packages on DevPi",
+            script: "${devpiExec} test --index ${devpiIndex} ${pkgName}==${pkgVersion} -s ${pkgSelector} --clientdir ${clientDir} -e ${toxEnv} -v"
+        )
+    } else{
+        bat(
+            label: "Running tests on Packages on DevPi",
+            script: "${devpiExec} test --index ${devpiIndex} ${pkgName}==${pkgVersion} -s ${pkgSelector}  --clientdir ${clientDir} -e ${toxEnv} -v"
+        )
+    }
+}
+
+def getToxEnvName(args){
+    try{
+        def pythonVersion = args.pythonVersion.replace(".", "")
+        return "py${pythonVersion}"
+    } catch(e){
+        return "py"
+    }
+}
+
 def testDevpiPackage2(args=[:]){
-    echo "testDevpiPackage2(${args})"
     def agent = getAgent(args)
     def devpiExec = args.devpi['devpiExec'] ? args.devpi['devpiExec'] : "devpi"
-    def serverUrl = args.devpi.server
+    def devpiIndex = args.devpi.index
+    def devpiServerUrl = args.devpi.server
     def credentialsId = args.devpi.credentialsId
     def clientDir = args['clientDir'] ? args['clientDir']: './devpi'
+    def pkgName = args.package.name
+    def pkgVersion = args.package.version
+    def pkgSelector = args.package.selector
+    def toxEnv = args.test.toxEnv
+
     agent{
-        echo "HERE inside"
-        echo "args.devpi = ${args.devpi}"
-        logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir)
-//         testDevpiPackage()
-//         if(isUnix()){
-//             sh(label: "Checking for devpi client",
-//                script: """devpi --help
-//                           """
-//                )
-//         } else{
-//            bat(label: "Checking for devpi client",
-//                script: """devpi --help
-//                           """
-//                )
-//
-//         }
+        logIntoDevpiServer(devpiExec, devpiServerUrl, credentialsId, clientDir)
+        runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv)
     }
-//     echo "agent = ${agent}"
 }
 
 return this
