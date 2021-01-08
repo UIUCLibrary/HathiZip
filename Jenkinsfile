@@ -952,7 +952,79 @@ pipeline {
                     steps{
 
                         parallel(
-                            "Test python 3.9: wheel Mac": {
+                            "Test Python 3.8: wheel Mac": {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            label: 'mac && python3.8'
+                                        ],
+                                        devpi: [
+                                            index: getDevPiStagingIndex(),
+                                            server: 'https://devpi.library.illinois.edu',
+                                            credentialsId: 'DS_devpi',
+                                            devpiExec: 'venv/bin/devpi'
+
+                                        ],
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "whl"
+                                        ],
+                                        test:[
+                                            setup: {
+                                                sh(
+                                                    label:"Installing Devpi client",
+                                                    script: '''python3 -m venv venv
+                                                                venv/bin/python -m pip install pip --upgrade
+                                                                venv/bin/python -m pip install devpi_client
+                                                                '''
+                                                )
+                                            },
+                                            toxEnv: 'py38',
+                                            teardown: {
+                                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                            }
+                                        ]
+                                    )
+                                }
+                            },
+                            "Test Python 3.8: sdist Mac": {
+                                script{
+                                    devpi.testDevpiPackage2(
+                                        agent: [
+                                            label: 'mac && python3.8'
+                                        ],
+                                        devpi: [
+                                            index: getDevPiStagingIndex(),
+                                            server: 'https://devpi.library.illinois.edu',
+                                            credentialsId: 'DS_devpi',
+                                            devpiExec: 'venv/bin/devpi'
+
+                                        ],
+                                        package:[
+                                            name: props.Name,
+                                            version: props.Version,
+                                            selector: "tar.gz"
+                                        ],
+                                        test:[
+                                            setup: {
+                                                sh(
+                                                    label:"Installing Devpi client",
+                                                    script: '''python3 -m venv venv
+                                                                venv/bin/python -m pip install pip --upgrade
+                                                                venv/bin/python -m pip install devpi_client
+                                                                '''
+                                                )
+                                            },
+                                            toxEnv: 'py38',
+                                            teardown: {
+                                                sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                            }
+                                        ]
+                                    )
+                                }
+                            },
+                            "Test Python 3.9: wheel Mac": {
                                 script{
                                     devpi.testDevpiPackage2(
                                         agent: [
@@ -988,7 +1060,7 @@ pipeline {
                                     )
                                 }
                             },
-                            "Test python 3.9: sdist Mac": {
+                            "Test Python 3.9: sdist Mac": {
                                 script{
                                     devpi.testDevpiPackage2(
                                         agent: [
