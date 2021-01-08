@@ -977,7 +977,19 @@ pipeline {
                         stages{
                             stage('Testing DevPi Package wheel'){
                                 steps{
-                                    echo "HERE"
+                                    script{
+                                        echo "HERE"
+                                        devpi.getAgent(
+                                            agent: [
+                                                dockerfile: [
+                                                    filename: "ci/docker/python/${PLATFORM}/tox/Dockerfile",
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS[PLATFORM]}",
+                                                    label: "${PLATFORM} && docker"
+
+                                                ]
+                                            ]
+                                        )
+                                    }
                                 }
                             }
 //                             stage('Testing DevPi Package wheel'){

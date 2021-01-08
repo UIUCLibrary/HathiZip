@@ -195,4 +195,47 @@ def removePackage(args = [:]){
     }
 }
 
+def getNodeLabel(agent){
+    def label
+    if (agent.containsKey("dockerfile")){
+        return agent.dockerfile.label
+    }
+    return label
+}
+
+def getAgent(args){
+
+    if (args.agent.containsKey("label")){
+        return { inner ->
+            node(args.agent.label){
+                ws{
+                    inner()
+                }
+            }
+        }
+
+    }
+
+    if (args.agent.containsKey("dockerfile")){
+        def nodeLabel = getNodeLabel(args.agent)
+        return { inner ->
+            node(nodeLabel){
+                ws{
+                    checkout scm
+                    def dockerImage
+                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
+                    lock("docker build-${env.NODE_NAME}"){
+                        dockerImage = docker.build(dockerImageName, "-f ${args.agent.dockerfile.filename} ${args.agent.dockerfile.additionalBuildArgs} .")
+                    }
+                    dockerImage.inside(){
+                        inner()
+                    }
+                }
+            }
+        }
+    }
+    error('Invalid agent type, expect [dockerfile,label]')
+}
+
+
 return this
