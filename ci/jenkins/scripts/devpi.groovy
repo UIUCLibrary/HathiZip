@@ -202,12 +202,9 @@ def getNodeLabel(agent){
     }
     return label
 }
-def testDevpiPackage2(args=[:]){
-    echo "HERER"
-}
 
 def getAgent(args){
-
+    echo "getAgent(${args})"
     if (args.agent.containsKey("label")){
         return { inner ->
             node(args.agent.label){
@@ -218,15 +215,13 @@ def getAgent(args){
         }
 
     }
-
     if (args.agent.containsKey("dockerfile")){
-        def nodeLabel = getNodeLabel(args.agent)
         return { inner ->
-            node(nodeLabel){
+            node(args.agent.dockerfile.label){
                 ws{
                     checkout scm
                     def dockerImage
-                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
+                    def dockerImageName = "${currentBuild.fullProjectName}_devpi".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
                     lock("docker build-${env.NODE_NAME}"){
                         dockerImage = docker.build(dockerImageName, "-f ${args.agent.dockerfile.filename} ${args.agent.dockerfile.additionalBuildArgs} .")
                     }
@@ -240,5 +235,10 @@ def getAgent(args){
     error('Invalid agent type, expect [dockerfile,label]')
 }
 
+def testDevpiPackage2(args=[:]){
+    echo "testDevpiPackage2(${args})"
+    def agent = getAgent(args)
+//     echo "agent = ${agent}"
+}
 
 return this
