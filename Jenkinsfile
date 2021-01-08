@@ -962,7 +962,7 @@ pipeline {
                                                 index: getDevPiStagingIndex(),
                                                 server: 'https://devpi.library.illinois.edu',
                                                 credentialsId: 'DS_devpi',
-                                                devpiExec: 'venv/venv/devpi'
+                                                devpiExec: 'venv/bin/devpi'
 
                                             ],
                                             package:[
@@ -980,7 +980,7 @@ pipeline {
                                                                     '''
                                                     )
                                                 },
-                                                toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION),
+                                                toxEnv: 'py39',
                                                 teardown: {
                                                     sh( 'rm -r venv')
                                                 }
