@@ -948,6 +948,50 @@ pipeline {
                     }
                 }
 //                 TODO: test on mac
+                stage('Test DevPi mac packages') {
+                    steps{
+
+                        parallel(
+                            "Test python 3.9: wheel Mac": {
+                                    script{
+                                        devpi.testDevpiPackage2(
+                                            agent: [
+                                                label: 'mac && python3.9'
+                                            ],
+                                            devpi: [
+                                                index: getDevPiStagingIndex(),
+                                                server: 'https://devpi.library.illinois.edu',
+                                                credentialsId: 'DS_devpi',
+                                                devpiExec: 'venv/venv/devpi'
+
+                                            ],
+                                            package:[
+                                                name: props.Name,
+                                                version: props.Version,
+                                                selector: "whl"
+                                            ],
+                                            test:[
+                                                setup: {
+                                                    sh(
+                                                        label:"Installing devpi client",
+                                                        script: '''python3 -m venv venv
+                                                                    venv/bin/python -m pip install pip --upgrade
+                                                                    venv/bin/python -m pip install devpi_client
+                                                                    '''
+                                                    )
+                                                },
+                                                toxEnv: devpi.getToxEnvName(pythonVersion: PYTHON_VERSION),
+                                                teardown: {
+                                                    sh( 'rm -r venv')
+                                                }
+                                            ]
+                                        )
+                                    }
+                            },
+                        )
+                    }
+
+                }
                 stage('Test DevPi packages') {
                     matrix {
                         axes {

@@ -298,10 +298,14 @@ def testDevpiPackage2(args=[:]){
     def pkgVersion = args.package.version
     def pkgSelector = args.package.selector
     def toxEnv = args.test.toxEnv
+    def testSetup = args.test['setup'] ? args.test['setup'] : {}
+    def testTeardown = args.test['teardown'] ? args.test['teardown'] : {}
 
     agent{
+        testSetup()
         logIntoDevpiServer(devpiExec, devpiServerUrl, credentialsId, clientDir)
         runDevpiTest(devpiExec, devpiIndex, pkgName, pkgVersion, pkgSelector, clientDir, toxEnv)
+        testTeardown()
     }
 }
 
