@@ -931,6 +931,7 @@ pipeline {
                         }
                     }
                 }
+//                 TODO: test on mac
                 stage("Test DevPi packages") {
                     matrix {
                         axes {
@@ -1044,112 +1045,68 @@ pipeline {
             }
         }
         stage("Deploy"){
-            stages{
-                stage("Tagging git Commit"){
-                    agent {
-                        dockerfile {
-                            filename DEFAULT_AGENT.filename
-                            label DEFAULT_AGENT.label
-                            additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                        }
-                    }
+            parallel{
+                stage("Deploy to SCCM") {
                     when{
                         allOf{
-                            equals expected: true, actual: params.DEPLOY_ADD_TAG
+                            equals expected: true, actual: params.DEPLOY_SCCM
+                            branch "master"
                         }
                         beforeAgent true
                         beforeInput true
                     }
-                    options{
-                        timeout(time: 1, unit: 'DAYS')
-                        retry(3)
+                    agent{
+                        label "linux"
                     }
                     input {
-                          message 'Add a version tag to git commit?'
-                          parameters {
-                                credentials credentialType: 'com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl', defaultValue: 'github.com', description: '', name: 'gitCreds', required: true
-                          }
+                        message 'Deploy to production?'
+                        parameters {
+                            string defaultValue: '', description: '', name: 'SCCM_UPLOAD_FOLDER', trim: true
+                            string defaultValue: '', description: '', name: 'SCCM_STAGING_FOLDER', trim: true
+                        }
                     }
-                    steps{
-                        script{
-                            def commitTag = input message: 'git commit', parameters: [string(defaultValue: "v${props.Version}", description: 'Version to use a a git tag', name: 'Tag', trim: false)]
-                            withCredentials([usernamePassword(credentialsId: gitCreds, passwordVariable: 'password', usernameVariable: 'username')]) {
-                                sh(label: "Tagging ${commitTag}",
-                                   script: """git config --local credential.helper "!f() { echo username=\\$username; echo password=\\$password; }; f"
-                                              git tag -a ${commitTag} -m 'Tagged by Jenkins'
-                                              git push origin --tags
-                                   """
-                                )
+
+                    options{
+                        skipDefaultCheckout true
+                    }
+
+                    steps {
+                        unstash "msi"
+                        deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+                        deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+
+                    }
+                    post {
+                        success {
+                            script{
+                                def deployment_request = requestDeploy this, "deployment.yml"
+                                echo deployment_request
+                                writeFile file: "deployment_request.txt", text: deployment_request
+                                archiveArtifacts artifacts: "deployment_request.txt"
                             }
                         }
                     }
-                    post{
-                        cleanup{
-                            deleteDir()
+                }
+                stage("Update online documentation") {
+                    agent {
+                        label "Linux"
+                    }
+                    when {
+                        equals expected: true, actual: params.UPDATE_DOCS
+                        beforeAgent true
+                        beforeInput true
+                    }
+                    input {
+                        message 'Update online documentation'
+                        parameters {
+                            string defaultValue: 'hathi_zip', description: 'The directory that the docs should be saved under', name: 'URL_SUBFOLDER', trim: true
                         }
                     }
-                }
-            }
-        }
-        stage("Deploy to SCCM") {
-            when{
-                allOf{
-                    equals expected: true, actual: params.DEPLOY_SCCM
-                    branch "master"
-                }
-                beforeAgent true
-                beforeInput true
-            }
-            agent{
-                label "linux"
-            }
-            input {
-                message 'Deploy to production?'
-                parameters {
-                    string defaultValue: '', description: '', name: 'SCCM_UPLOAD_FOLDER', trim: true
-                    string defaultValue: '', description: '', name: 'SCCM_STAGING_FOLDER', trim: true
-                }
-            }
+                    steps {
+                        updateOnlineDocs url_subdomain: "${URL_SUBFOLDER}", stash_name: "HTML Documentation"
 
-            options{
-                skipDefaultCheckout true
-            }
-
-            steps {
-                unstash "msi"
-                deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
-
-            }
-            post {
-                success {
-                    script{
-                        def deployment_request = requestDeploy this, "deployment.yml"
-                        echo deployment_request
-                        writeFile file: "deployment_request.txt", text: deployment_request
-                        archiveArtifacts artifacts: "deployment_request.txt"
                     }
                 }
-            }
-        }
-        stage("Update online documentation") {
-            agent {
-                label "Linux"
-            }
-            when {
-                equals expected: true, actual: params.UPDATE_DOCS
-                beforeAgent true
-                beforeInput true
-            }
-            input {
-                message 'Update online documentation'
-                parameters {
-                    string defaultValue: 'hathi_zip', description: 'The directory that the docs should be saved under', name: 'URL_SUBFOLDER', trim: true
-                }
-            }
-            steps {
-                updateOnlineDocs url_subdomain: "${URL_SUBFOLDER}", stash_name: "HTML Documentation"
-
             }
         }
     }
