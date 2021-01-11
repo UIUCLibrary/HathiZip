@@ -181,6 +181,7 @@ def getAgent(args){
     }
     error('Invalid agent type, expect [dockerfile,label]')
 }
+
 def logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir){
     withEnv([
         "DEVPI=${devpiExec}",
