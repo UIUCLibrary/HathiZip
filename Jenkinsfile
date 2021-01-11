@@ -925,7 +925,12 @@ pipeline {
                 stage('Test DevPi packages') {
                     steps{
                         script{
-                            def macPackages = [
+                            def macPackages = [:]
+                            ['3.8', '3.9'].each{pythonVersion ->
+                                echo "Testing ${pythonVersion}"
+
+                            }
+                            macPackages = macPackages + [
                                 'Test Python 3.8: wheel Mac': {
                                     devpi.testDevpiPackage(
                                         agent: [
