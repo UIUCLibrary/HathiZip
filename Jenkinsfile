@@ -53,9 +53,15 @@ def DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
     windows: ''
 ]
+
+SONARQUBE_CREDENTIAL_ID = 'sonartoken-hathizip'
+DEVPI_STAGING_INDEX = "DS_Jenkins/${getDevPiStagingIndex()}"
+
+defaultParameterValues = [
+    USE_SONARQUBE: false
+]
 // ****************************************************************************
 def tox
-
 
 
 node(){
