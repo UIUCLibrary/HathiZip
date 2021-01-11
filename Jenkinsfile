@@ -927,7 +927,9 @@ pipeline {
                         script{
                             def macPackages = [:]
                             ['3.8', '3.9'].each{pythonVersion ->
-                                echo "Testing ${pythonVersion}"
+                                macPackages["Testing ${pythonVersion} on mac"] = {
+                                    echo "Testing ${pythonVersion}"
+                                }
 
                             }
                             macPackages = macPackages + [
