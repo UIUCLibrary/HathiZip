@@ -1,19 +1,19 @@
 CONFIGURATIONS = [
     '3.6': [
-        test_docker_image: "python:3.6-windowsservercore",
-        tox_env: "py36"
+        test_docker_image: 'python:3.6-windowsservercore',
+        tox_env: 'py36'
         ],
-    "3.7": [
-        test_docker_image: "python:3.7",
-        tox_env: "py37"
+    '3.7': [
+        test_docker_image: 'python:3.7',
+        tox_env: 'py37'
         ],
-    "3.8": [
-        test_docker_image: "python:3.8",
-        tox_env: "py38"
+    '3.8': [
+        test_docker_image: 'python:3.8',
+        tox_env: 'py38'
         ],
-    "3.9": [
-        test_docker_image: "python:3.9",
-        tox_env: "py39"
+    '3.9': [
+        test_docker_image: 'python:3.9',
+        tox_env: 'py39'
         ]
 ]
 
@@ -49,10 +49,10 @@ def tox
 
 node(){
     checkout scm
-    tox = load("ci/jenkins/scripts/tox.groovy")
+    tox = load('ci/jenkins/scripts/tox.groovy')
     devpi = load('ci/jenkins/scripts/devpi.groovy')
 }
-SONARQUBE_CREDENTIAL_ID = "sonartoken-hathizip"
+SONARQUBE_CREDENTIAL_ID = 'sonartoken-hathizip'
 DEVPI_STAGING_INDEX = "DS_Jenkins/${getDevPiStagingIndex()}"
 
 defaultParameterValues = [
@@ -64,7 +64,7 @@ def startup(){
     parallel(
         [
             failFast: true,
-            "Checking sonarqube Settings": {
+            'Checking sonarqube Settings': {
                 node(){
                     try{
                         withCredentials([string(credentialsId: SONARQUBE_CREDENTIAL_ID, variable: 'dddd')]) {
@@ -77,7 +77,7 @@ def startup(){
                     }
                 }
             },
-            "Getting Distribution Info": {
+            'Getting Distribution Info': {
                 node('linux && docker') {
                     timeout(2){
                         ws{
@@ -86,9 +86,9 @@ def startup(){
                                 docker.image('python:3.8').inside {
                                     sh(
                                        label: 'Running setup.py with dist_info',
-                                       script: """python --version
+                                       script: '''python --version
                                                   python setup.py dist_info
-                                               """
+                                               '''
                                     )
                                     stash includes: 'HathiZip.dist-info/**', name: 'DIST-INFO'
                                     archiveArtifacts artifacts: 'HathiZip.dist-info/**'
@@ -128,17 +128,17 @@ pipeline {
       lib('ds-utils')
     }
     parameters {
-        string(name: "PROJECT_NAME", defaultValue: "HathiTrust Zip for Submit", description: "Name given to the project")
+        string(name: 'PROJECT_NAME', defaultValue: 'HathiTrust Zip for Submit', description: 'Name given to the project')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
         booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
-        booleanParam(name: "TEST_RUN_TOX", defaultValue: false, description: "Run Tox Tests")
+        booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
-        booleanParam(name: "TEST_PACKAGES_ON_MAC", defaultValue: false, description: "Test Python packages on Mac")
-        booleanParam(name: "PACKAGE_CX_FREEZE", defaultValue: false, description: "Create a package with CX_Freeze")
-        booleanParam(name: "DEPLOY_DEVPI", defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
-        booleanParam(name: "DEPLOY_DEVPI_PRODUCTION", defaultValue: false, description: "Deploy to https://devpi.library.illinois.edu/production/release")
-        booleanParam(name: "DEPLOY_SCCM", defaultValue: false, description: "Deploy to SCCM")
-        booleanParam(name: "UPDATE_DOCS", defaultValue: false, description: "Update online documentation")
+        booleanParam(name: 'TEST_PACKAGES_ON_MAC', defaultValue: false, description: 'Test Python packages on Mac')
+        booleanParam(name: 'PACKAGE_CX_FREEZE', defaultValue: false, description: 'Create a package with CX_Freeze')
+        booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
+        booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
+        booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Deploy to SCCM')
+        booleanParam(name: 'UPDATE_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
         stage('Build'){
@@ -279,9 +279,10 @@ pipeline {
                                         stage('MyPy'){
                                             steps{
                                                 sh 'mkdir -p reports/mypy && mkdir -p logs'
+// TOOO: use tee jenkins commmand
                                                 catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
                                                     sh(
-                                                        script: "mypy -p hathizip --html-report ${WORKSPACE}/reports/mypy/mypy_html | tee logs/mypy.log"
+                                                        script: 'mypy -p hathizip --html-report reports/mypy/mypy_html | tee logs/mypy.log'
                                                     )
                                                 }
                                             }
@@ -1184,8 +1185,8 @@ pipeline {
 
                     steps {
                         unstash 'msi'
-                        deployStash("msi", "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                        deployStash("msi", "${env.SCCM_UPLOAD_FOLDER}")
+                        deployStash('msi', "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
+                        deployStash('msi', "${env.SCCM_UPLOAD_FOLDER}")
 
                     }
                     post {
@@ -1215,7 +1216,7 @@ pipeline {
                         }
                     }
                     steps {
-                        updateOnlineDocs url_subdomain: URL_SUBFOLDER, stash_name: "HTML Documentation"
+                        updateOnlineDocs url_subdomain: URL_SUBFOLDER, stash_name: 'HTML Documentation'
 
                     }
                 }
