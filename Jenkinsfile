@@ -1,3 +1,24 @@
+
+
+def getDevPiStagingIndex(){
+
+    if (env.TAG_NAME?.trim()){
+        return 'tag_staging'
+    } else{
+        return "${env.BRANCH_NAME}_staging"
+    }
+}
+// ****************************************************************************
+//  Constants
+//
+// ============================================================================
+// Versions of python that are supported
+// ----------------------------------------------------------------------------
+SUPPORTED_MAC_VERSIONS = ['3.8', '3.9']
+SUPPORTED_LINUX_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
+SUPPORTED_WINDOWS_VERSIONS = ['3.6', '3.7', '3.8', '3.9']
+
+// ============================================================================
 CONFIGURATIONS = [
     '3.6': [
         test_docker_image: 'python:3.6-windowsservercore',
@@ -17,16 +38,6 @@ CONFIGURATIONS = [
         ]
 ]
 
-
-def getDevPiStagingIndex(){
-
-    if (env.TAG_NAME?.trim()){
-        return 'tag_staging'
-    } else{
-        return "${env.BRANCH_NAME}_staging"
-    }
-}
-
 def DEVPI_CONFIG = [
     index: getDevPiStagingIndex(),
     server: 'https://devpi.library.illinois.edu',
@@ -42,7 +53,7 @@ def DOCKER_PLATFORM_BUILD_ARGS = [
     linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
     windows: ''
 ]
-
+// ****************************************************************************
 def tox
 
 
@@ -926,7 +937,7 @@ pipeline {
                     steps{
                         script{
                             def macPackages = [:]
-                            ['3.8', '3.9'].each{pythonVersion ->
+                            SUPPORTED_MAC_VERSIONS.each{pythonVersion ->
                                 macPackages["Test Python ${pythonVersion}: wheel Mac"] = {
                                     devpi.testDevpiPackage(
                                         agent: [
@@ -997,7 +1008,7 @@ pipeline {
                                 }
                             }
                             def windowsPackages = [:]
-                            ['3.6', '3.7', '3.8', '3.9'].each{pythonVersion ->
+                            SUPPORTED_WINDOWS_VERSIONS.each{pythonVersion ->
                                 windowsPackages["Test Python ${pythonVersion}: sdist Windows"] = {
                                     devpi.testDevpiPackage(
                                         agent: [
@@ -1040,7 +1051,7 @@ pipeline {
                                 }
                             }
                             def linuxPackages = [:]
-                            ['3.6', '3.7', '3.8', '3.9'].each{pythonVersion ->
+                            SUPPORTED_LINUX_VERSIONS.each{pythonVersion ->
                                 linuxPackages["Test Python ${pythonVersion}: sdist Linux"] = {
                                     devpi.testDevpiPackage(
                                         agent: [
