@@ -883,7 +883,10 @@ pipeline {
                     when {
                         allOf{
                             equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
-                            branch 'master'
+                            anyOf {
+                                equals expected: 'master', actual: env.BRANCH_NAME
+                                tag '*'
+                            }
                         }
                         beforeAgent true
                         beforeInput true
