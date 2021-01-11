@@ -150,9 +150,6 @@ def getNodeLabel(agent){
     }
     return label
 }
-def testDevpiPackage2(args=[:]){
-    echo "HERER"
-}
 
 def getAgent(args){
     if (args.agent.containsKey("label")){
@@ -184,6 +181,7 @@ def getAgent(args){
     }
     error('Invalid agent type, expect [dockerfile,label]')
 }
+
 def logIntoDevpiServer(devpiExec, serverUrl, credentialsId, clientDir){
     withEnv([
         "DEVPI=${devpiExec}",
