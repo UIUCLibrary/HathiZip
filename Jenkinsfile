@@ -63,12 +63,6 @@ node(){
     tox = load('ci/jenkins/scripts/tox.groovy')
     devpi = load('ci/jenkins/scripts/devpi.groovy')
 }
-SONARQUBE_CREDENTIAL_ID = 'sonartoken-hathizip'
-DEVPI_STAGING_INDEX = "DS_Jenkins/${getDevPiStagingIndex()}"
-
-defaultParameterValues = [
-    USE_SONARQUBE: false
-]
 
 def startup(){
     def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
@@ -305,7 +299,6 @@ pipeline {
                                                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
                                                     recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
                                                 }
-
                                             }
                                         }
                                         stage('Run Flake8 Static Analysis') {
@@ -324,7 +317,6 @@ pipeline {
                                             }
                                         }
                                     }
-
                                 }
                             }
                             post{
@@ -453,7 +445,6 @@ pipeline {
                 }
             }
         }
-
         stage('Packaging') {
             stages{
                 stage('Create'){
@@ -470,7 +461,6 @@ pipeline {
                                 timeout(5){
                                     sh 'python setup.py sdist -d dist bdist_wheel -d dist'
                                 }
-
                             }
                             post{
                                 success{
@@ -537,9 +527,7 @@ pipeline {
                             node(){
                                 checkout scm
                                 packages = load 'ci/jenkins/scripts/packaging.groovy'
-
                             }
-
                             def windowsTests = [:]
                             SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
                                 windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
@@ -686,7 +674,6 @@ pipeline {
             options{
                 lock('HathiZip-devpi')
             }
-
             agent none
             stages{
                 stage('Uploading to DevPi Staging'){
@@ -739,7 +726,6 @@ pipeline {
                                             server: 'https://devpi.library.illinois.edu',
                                             credentialsId: 'DS_devpi',
                                             devpiExec: 'venv/bin/devpi'
-
                                         ],
                                         package:[
                                             name: props.Name,
@@ -773,7 +759,6 @@ pipeline {
                                             server: 'https://devpi.library.illinois.edu',
                                             credentialsId: 'DS_devpi',
                                             devpiExec: 'venv/bin/devpi'
-
                                         ],
                                         package:[
                                             name: props.Name,
@@ -951,7 +936,6 @@ pipeline {
                                     index: DEVPI_STAGING_INDEX,
                                     server: 'https://devpi.library.illinois.edu',
                                     credentialsId: 'DS_devpi',
-
                                 )
                             }
                        }
@@ -980,16 +964,13 @@ pipeline {
                             string defaultValue: '', description: '', name: 'SCCM_STAGING_FOLDER', trim: true
                         }
                     }
-
                     options{
                         skipDefaultCheckout true
                     }
-
                     steps {
                         unstash 'msi'
                         deployStash('msi', "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
                         deployStash('msi', env.SCCM_UPLOAD_FOLDER)
-
                     }
                     post {
                         success {
@@ -1019,7 +1000,6 @@ pipeline {
                     }
                     steps {
                         updateOnlineDocs url_subdomain: URL_SUBFOLDER, stash_name: 'HTML Documentation'
-
                     }
                 }
             }
