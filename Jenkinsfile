@@ -163,10 +163,12 @@ pipeline {
             stages{
                 stage('Python Package'){
                     steps {
-                        sh(script: '''mkdir -p logs
-                                      python setup.py build -b build | tee logs/build.log
-                                      '''
-                        )
+                        tee('logs/build.log'){
+                            sh(script: '''mkdir -p logs
+                                          python setup.py build -b build
+                                          '''
+                            )
+                        }
                     }
                     post{
                         always{
@@ -290,11 +292,12 @@ pipeline {
                                         stage('MyPy'){
                                             steps{
                                                 sh 'mkdir -p reports/mypy && mkdir -p logs'
-// TOOO: use tee jenkins commmand
                                                 catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
-                                                    sh(
-                                                        script: 'mypy -p hathizip --html-report reports/mypy/mypy_html | tee logs/mypy.log'
-                                                    )
+                                                    tee('logs/mypy.log'){
+                                                        sh(
+                                                            script: 'mypy -p hathizip --html-report reports/mypy/mypy_html'
+                                                        )
+                                                    }
                                                 }
                                             }
                                             post{
@@ -525,7 +528,8 @@ pipeline {
                 }
                 stage('Testing'){
                     when{
-                        equals expected: true, actual: params.TEST_PACKAGES
+                        equals expected: true, actual: true
+//                         equals expected: true, actual: params.TEST_PACKAGES
                         beforeAgent true
                     }
                     steps{
