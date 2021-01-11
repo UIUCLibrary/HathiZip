@@ -526,10 +526,9 @@ pipeline {
                         }
                     }
                 }
-                stage('Testing'){
+                stage('Testing Python Packages'){
                     when{
-                        equals expected: true, actual: true
-//                         equals expected: true, actual: params.TEST_PACKAGES
+                        equals expected: true, actual: params.TEST_PACKAGES
                         beforeAgent true
                     }
                     steps{
@@ -540,339 +539,127 @@ pipeline {
                                 packages = load 'ci/jenkins/scripts/packaging.groovy'
 
                             }
-                            def tests = [
-                                    'Windows - Python 3.6: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                    
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'dist',
-                                            pythonVersion: '3.6'
-                                        )
-                                    },
-                                    'Windows - Python 3.7: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'dist',
-                                            pythonVersion: '3.7'
-                                        )
-                                    },
-                                    'Windows - Python 3.8: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8'
-                                        )
-                                    },
-                                    'Windows - Python 3.9: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'dist',
-                                            pythonVersion: '3.9'
-                                        )
-                                    },
-                                    'Linux - Python 3.6: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz',
-                                            stash: 'dist',
-                                            pythonVersion: '3.6'
-                                        )
-                                    },
-                                    'Linux - Python 3.7: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz',
-                                            stash: 'dist',
-                                            pythonVersion: '3.7'
-                                        )
-                                    },
-                                    'Linux - Python 3.8: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8'
-                                        )
-                                    },
-                                    'Linux - Python 3.9: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.tar.gz',
-                                            stash: 'dist',
-                                            pythonVersion: '3.9'
-                                        )
-                                    },
-                                    'Windows - Python 3.6: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.6'
-                                        )
-                                    },
-                                    'Windows - Python 3.7: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.7'
-                                        )
-                                    },
-                                    'Windows - Python 3.8: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8'
-                                        )
-                                    },
-                                    'Windows - Python 3.9: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'windows && docker',
-                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.9'
-                                        )
-                                    },
-                                    'Linux - Python 3.6: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.6'
-                                        )
-                                    },
-                                    'Linux - Python 3.7: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.7'
-                                        )
-                                    },
-                                    'Linux - Python 3.8: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8'
-                                        )
-                                    },
-                                    'Linux - Python 3.9: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                dockerfile: [
-                                                    label: 'linux && docker',
-                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                                ]
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.9'
-                                        )
-                                    },
-                                ]
-                            def macTests = [
-                                'Mac - Python 3.8: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                label: 'mac && python3.8',
-                                            ],
-                                            glob: 'dist/*.tar.gz,dist/*.zip',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8',
-                                            toxExec: 'venv/bin/tox',
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh 'rm -r venv/'
-                                            }
 
-                                        )
-                                    },
-                                    'Mac - Python 3.8: wheel': {
+                            def windowsTests = [:]
+                            SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
+                                windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
                                         packages.testPkg(
                                             agent: [
-                                                label: 'mac && python3.8',
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.8',
-                                            toxExec: 'venv/bin/tox',
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh 'rm -r venv/'
-                                            }
-
-                                        )
-                                    },
-                                    'Mac - Python 3.9: sdist': {
-                                        packages.testPkg(
-                                            agent: [
-                                                label: 'mac && python3.9',
+                                                dockerfile: [
+                                                    label: 'windows && docker',
+                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                ]
                                             ],
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'dist',
-                                            pythonVersion: '3.9',
-                                            toxExec: 'venv/bin/tox',
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh 'rm -r venv/'
-                                            }
-
-                                        )
-                                    },
-                                    'Mac - Python 3.9: wheel': {
-                                        packages.testPkg(
-                                            agent: [
-                                                label: 'mac && python3.9',
-                                            ],
-                                            glob: 'dist/*.whl',
-                                            stash: 'dist',
-                                            pythonVersion: '3.9',
-                                            toxExec: 'venv/bin/tox',
-                                            testSetup: {
-                                                checkout scm
-                                                unstash 'dist'
-                                                sh(
-                                                    label:'Install Tox',
-                                                    script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
-                                                )
-                                            },
-                                            testTeardown: {
-                                                sh 'rm -r venv/'
-                                            }
-
+                                            pythonVersion: pythonVersion
                                         )
                                     }
-                                ]
+                                windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
+                                        packages.testPkg(
+                                            agent: [
+                                                dockerfile: [
+                                                    label: 'windows && docker',
+                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                ]
+                                            ],
+                                            glob: 'dist/*.whl',
+                                            stash: 'dist',
+                                            pythonVersion: pythonVersion
+                                        )
+                                    }
+                            }
+
+                            def linuxTests = [:]
+                            SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
+                                linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
+                                    packages.testPkg(
+                                        agent: [
+                                            dockerfile: [
+                                                label: 'linux && docker',
+                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                            ]
+                                        ],
+                                        glob: 'dist/*.tar.gz',
+                                        stash: 'dist',
+                                        pythonVersion: pythonVersion
+                                    )
+                                }
+                                linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+                                    packages.testPkg(
+                                        agent: [
+                                            dockerfile: [
+                                                label: 'linux && docker',
+                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                            ]
+                                        ],
+                                        glob: 'dist/*.whl',
+                                        stash: 'dist',
+                                        pythonVersion: pythonVersion
+                                    )
+                                }
+                            }
+
+                            def macTests = [:]
+                            SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
+                                macTests["Mac - Python ${pythonVersion}: sdist"] = {
+                                    packages.testPkg(
+                                            agent: [
+                                                label: "mac && python${pythonVersion}",
+                                            ],
+                                            glob: 'dist/*.tar.gz,dist/*.zip',
+                                            stash: 'dist',
+                                            pythonVersion: pythonVersion,
+                                            toxExec: 'venv/bin/tox',
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh 'rm -r venv/'
+                                            }
+
+                                        )
+                                }
+                                macTests["Mac - Python ${pythonVersion}: wheel"] = {
+                                    packages.testPkg(
+                                            agent: [
+                                                label: "mac && python${pythonVersion}",
+                                            ],
+                                            glob: 'dist/*.whl',
+                                            stash: 'dist',
+                                            pythonVersion: pythonVersion,
+                                            toxExec: 'venv/bin/tox',
+                                            testSetup: {
+                                                checkout scm
+                                                unstash 'dist'
+                                                sh(
+                                                    label:'Install Tox',
+                                                    script: '''python3 -m venv venv
+                                                               venv/bin/pip install pip --upgrade
+                                                               venv/bin/pip install tox
+                                                               '''
+                                                )
+                                            },
+                                            testTeardown: {
+                                                sh 'rm -r venv/'
+                                            }
+
+                                        )
+                                }
+                            }
+                            def tests = linuxTests + windowsTests
                             if(params.TEST_PACKAGES_ON_MAC == true){
                                 tests = tests + macTests
                             }
