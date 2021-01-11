@@ -1186,7 +1186,7 @@ pipeline {
                     steps {
                         unstash 'msi'
                         deployStash('msi', "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                        deployStash('msi', "${env.SCCM_UPLOAD_FOLDER}")
+                        deployStash('msi', env.SCCM_UPLOAD_FOLDER)
 
                     }
                     post {
