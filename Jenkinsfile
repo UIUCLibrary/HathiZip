@@ -922,18 +922,20 @@ pipeline {
             post{
                 success{
                     node('linux && docker') {
-                       script{
-                            docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
-                                devpi.pushPackageToIndex(
-                                        pkgName: props.Name,
-                                        pkgVersion: props.Version,
-                                        server: 'https://devpi.library.illinois.edu',
-                                        indexSource: DEVPI_STAGING_INDEX,
-                                        indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
-                                        credentialsId: 'DS_devpi'
-                                    )
+                        script{
+                            if (!env.TAG_NAME?.trim()){
+                                docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
+                                    devpi.pushPackageToIndex(
+                                            pkgName: props.Name,
+                                            pkgVersion: props.Version,
+                                            server: 'https://devpi.library.illinois.edu',
+                                            indexSource: DEVPI_STAGING_INDEX,
+                                            indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
+                                            credentialsId: 'DS_devpi'
+                                        )
+                                }
                             }
-                       }
+                        }
                     }
                 }
                 cleanup{
