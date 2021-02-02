@@ -101,8 +101,8 @@ def startup(){
                                                   python setup.py dist_info
                                                '''
                                     )
-                                    stash includes: 'HathiZip.dist-info/**', name: 'DIST-INFO'
-                                    archiveArtifacts artifacts: 'HathiZip.dist-info/**'
+                                    stash includes: '*.dist-info/**', name: 'DIST-INFO'
+                                    archiveArtifacts artifacts: '*.dist-info/**'
                                 }
                             } finally{
                                 deleteDir()
