@@ -1,5 +1,5 @@
 # escape=`
-ARG PYTHON_DOCKER_IMAGE_BASE=python:3.7
+ARG PYTHON_DOCKER_IMAGE_BASE=python:3.9
 FROM ${PYTHON_DOCKER_IMAGE_BASE}
 
 RUN certutil -generateSSTFromWU roots.sst ; `
