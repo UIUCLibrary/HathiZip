@@ -88,3 +88,64 @@ class TestDestinationPath:
         )
         with pytest.raises(ValueError):
             cli.destination_path(sample_path)
+
+
+class TestMain:
+    def test_valid(self, monkeypatch):
+        source = os.path.join("some", "valid", "source")
+        monkeypatch.setattr(
+            cli.os.path, "exists", lambda path: path == source
+        )
+
+        monkeypatch.setattr(
+            cli.os.path, "isdir", lambda path: path == source
+        )
+        monkeypatch.setattr(cli, "has_subdirs", lambda path: path == source)
+
+        def mock_scan_dir(path):
+            x = Mock(path=os.path.join(path, "dummy.txt"))
+            x.name = "dummy.txt"
+            res = [
+                x
+            ]
+            return res
+
+        monkeypatch.setattr(
+            cli.os, "scandir", mock_scan_dir
+        )
+        compress_folder = Mock()
+        monkeypatch.setattr(cli.process, "compress_folder", compress_folder)
+        cli.main(argv=[source])
+        assert compress_folder.called is True
+
+    def test_valid_removed(self, monkeypatch):
+        source = os.path.join("some", "valid", "source")
+        monkeypatch.setattr(
+            cli.os.path, "exists", lambda path: path == source
+        )
+
+        monkeypatch.setattr(
+            cli.os.path, "isdir", lambda path: path == source
+        )
+        monkeypatch.setattr(cli, "has_subdirs", lambda path: path == source)
+
+        def mock_scan_dir(path):
+            x = Mock(path=os.path.join(path, "dummy.txt"))
+            x.name = "dummy.txt"
+            res = [
+                x
+            ]
+            return res
+
+        monkeypatch.setattr(
+            cli.os, "scandir", mock_scan_dir
+        )
+        compress_folder = Mock()
+        monkeypatch.setattr(cli.process, "compress_folder", compress_folder)
+
+        rmtree = Mock()
+        monkeypatch.setattr(cli.shutil, "rmtree", rmtree)
+        cli.main(argv=[source, "--remove"])
+
+        assert compress_folder.called is True and \
+               rmtree.called is True

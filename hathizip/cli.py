@@ -3,6 +3,7 @@
 import argparse
 import os
 import shutil
+import sys
 
 from hathizip import process, configure_logging
 from hathizip.utils import has_subdirs
@@ -84,10 +85,12 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main():
+def main(argv=None):
     """Run main entry point for the program."""
+    argv = argv or sys.argv[1:]
+
     parser = get_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.dest:
         # If an alternative destination path for the zip files is asked for,
