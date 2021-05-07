@@ -3,6 +3,7 @@ import os
 from hathizip import cli, process
 from unittest.mock import Mock
 import argparse
+import pytest
 
 
 def test_version_exits_after_being_called(monkeypatch):
@@ -46,3 +47,44 @@ def test_main_cli_args_calls_compress_folder(monkeypatch, tmpdir):
         m.setattr(process, "compress_folder", mock_compress_folder)
         cli.main()
         mock_compress_folder.assert_called()
+
+
+class TestDestinationPath:
+    def test_valid(self, monkeypatch):
+        sample_path = os.path.join("sample", "path")
+
+        monkeypatch.setattr(
+            cli.os.path, "exists", lambda path: path == sample_path
+        )
+
+        monkeypatch.setattr(
+            cli.os.path, "isdir", lambda path: path == sample_path
+        )
+
+        cli.destination_path(sample_path)
+
+    def test_non_existent_fails(self, monkeypatch):
+        sample_path = os.path.join("invalid", "path", "does", "not", "exists")
+
+        monkeypatch.setattr(
+            cli.os.path, "exists", lambda path: False
+        )
+
+        monkeypatch.setattr(
+            cli.os.path, "isdir", lambda path: path == sample_path
+        )
+        with pytest.raises(ValueError):
+            cli.destination_path(sample_path)
+
+    def test_use_files_fails(self, monkeypatch):
+        sample_path = os.path.join("sample", "path.txt")
+
+        monkeypatch.setattr(
+            cli.os.path, "exists", lambda path: path == sample_path
+        )
+
+        monkeypatch.setattr(
+            cli.os.path, "isdir", lambda path: False
+        )
+        with pytest.raises(ValueError):
+            cli.destination_path(sample_path)
