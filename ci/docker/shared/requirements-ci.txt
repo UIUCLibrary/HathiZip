@@ -1,2 +1,3 @@
 devpi-client
 pylint
+twine
