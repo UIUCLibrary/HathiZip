@@ -106,7 +106,7 @@ def startup(){
                         ws{
                             checkout scm
                             try{
-                                docker.image('python:3.9').inside {
+                                docker.image('python').inside {
                                     sh(
                                        label: 'Running setup.py with dist_info',
                                        script: '''python --version
