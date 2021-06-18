@@ -94,6 +94,12 @@ def startup(){
                     }
                 }
             },
+            'Loading Reference Build Information': {
+                node(){
+                    checkout scm
+                    discoverGitReferenceBuild()
+                }
+            },
             'Getting Distribution Info': {
                 node('linux && docker') {
                     timeout(2){
@@ -204,7 +210,6 @@ pipeline {
                     }
                     post{
                         always {
-                            discoverGitReferenceBuild()
                             recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
