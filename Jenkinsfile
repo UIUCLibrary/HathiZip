@@ -94,6 +94,12 @@ def startup(){
                     }
                 }
             },
+            'Loading Reference Build Information': {
+                node(){
+                    checkout scm
+                    discoverGitReferenceBuild()
+                }
+            },
             'Getting Distribution Info': {
                 node('linux && docker') {
                     timeout(2){
@@ -140,10 +146,10 @@ def props = get_props()
 
 pipeline {
     agent none
-    libraries {
-      lib('PythonHelpers')
-      lib('ds-utils')
-    }
+//     libraries {
+//       lib('PythonHelpers')
+//       lib('ds-utils')
+//     }
     parameters {
         string(name: 'PROJECT_NAME', defaultValue: 'HathiTrust Zip for Submit', description: 'Name given to the project')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
