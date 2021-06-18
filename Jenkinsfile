@@ -140,10 +140,10 @@ def props = get_props()
 
 pipeline {
     agent none
-    libraries {
-      lib('PythonHelpers')
-      lib('ds-utils')
-    }
+//     libraries {
+//       lib('PythonHelpers')
+//       lib('ds-utils')
+//     }
     parameters {
         string(name: 'PROJECT_NAME', defaultValue: 'HathiTrust Zip for Submit', description: 'Name given to the project')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
@@ -204,7 +204,7 @@ pipeline {
                     }
                     post{
                         always {
-                            discoverGitReferenceBuild
+                            discoverGitReferenceBuild()
                             recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
