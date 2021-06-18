@@ -204,6 +204,7 @@ pipeline {
                     }
                     post{
                         always {
+                            discoverGitReferenceBuild
                             recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
                         }
