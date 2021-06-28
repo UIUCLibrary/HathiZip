@@ -358,6 +358,7 @@ pipeline {
                         stage('Run Sonarqube Analysis'){
                             options{
                                 lock('hathizip-sonarscanner')
+                                retry(3)
                             }
                             when{
                                 equals expected: true, actual: params.USE_SONARQUBE
