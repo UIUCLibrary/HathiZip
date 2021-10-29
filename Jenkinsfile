@@ -302,6 +302,11 @@ pipeline {
                                                 }
                                             }
                                         }
+                                        stage('Task Scanner'){
+                                            steps{
+                                                recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'hathizip/**/*.py', normalTags: 'TODO')])
+                                            }
+                                        }
                                         stage('MyPy'){
                                             steps{
                                                 sh 'mkdir -p reports/mypy && mkdir -p logs'
