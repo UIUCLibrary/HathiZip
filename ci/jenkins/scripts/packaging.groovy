@@ -54,7 +54,7 @@ def testPkg(args = [:]){
         unstash "${args.stash}"
     }
     def teardown =  args['testTeardown'] ? args['testTeardown']: {}
-    def retryTimes = 3
+    def retryTimes = args['retryTimes'] ? args['retryTimes']: 1
     def agentRunner = getAgent(args)
     retry(retryTimes){
         agentRunner {
