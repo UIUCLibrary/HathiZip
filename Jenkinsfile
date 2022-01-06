@@ -564,6 +564,7 @@ pipeline {
                                                     additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
+                                            retryTimes: 3,
                                             glob: 'dist/*.tar.gz,dist/*.zip',
                                             stash: 'dist',
                                             pythonVersion: pythonVersion
@@ -578,6 +579,7 @@ pipeline {
                                                     additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
                                                 ]
                                             ],
+                                            retryTimes: 3,
                                             glob: 'dist/*.whl',
                                             stash: 'dist',
                                             pythonVersion: pythonVersion
@@ -596,6 +598,7 @@ pipeline {
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                             ]
                                         ],
+                                        retryTimes: 3,
                                         glob: 'dist/*.tar.gz',
                                         stash: 'dist',
                                         pythonVersion: pythonVersion
