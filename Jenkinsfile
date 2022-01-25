@@ -162,7 +162,7 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
         booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Deploy to SCCM')
-        booleanParam(name: 'UPDATE_DOCS', defaultValue: false, description: 'Update online documentation')
+        booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
         stage('Build'){
@@ -1071,23 +1071,42 @@ pipeline {
                         }
                     }
                 }
-                stage('Update online documentation') {
-                    agent {
-                        label 'Linux'
-                    }
-                    when {
-                        equals expected: true, actual: params.UPDATE_DOCS
+                stage('Deploy Online Documentation') {
+                    when{
+                        equals expected: true, actual: params.DEPLOY_DOCS
                         beforeAgent true
                         beforeInput true
                     }
-                    input {
-                        message 'Update online documentation'
-                        parameters {
-                            string defaultValue: 'hathi_zip', description: 'The directory that the docs should be saved under', name: 'URL_SUBFOLDER', trim: true
+
+                    agent {
+                        dockerfile {
+                            filename DEFAULT_AGENT.filename
+                            label DEFAULT_AGENT.label
+                            additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
                         }
                     }
-                    steps {
-                        updateOnlineDocs url_subdomain: URL_SUBFOLDER, stash_name: 'HTML Documentation'
+                    options{
+                        timeout(time: 1, unit: 'DAYS')
+                    }
+                    input {
+                        message 'Update project documentation?'
+                    }
+                    steps{
+                        unstash 'DOCS_ARCHIVE'
+                        withCredentials([usernamePassword(credentialsId: 'dccdocs-server', passwordVariable: 'docsPassword', usernameVariable: 'docsUsername')]) {
+                            sh 'python utils/upload_docs.py --username=$docsUsername --password=$docsPassword --subroute=hathi_zip build/docs/html apache-ns.library.illinois.edu'
+                        }
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                    deleteDirs: true,
+                                    patterns: [
+                                        [pattern: 'build/', type: 'INCLUDE'],
+                                        [pattern: 'dist/', type: 'INCLUDE'],
+                                        ]
+                                )
+                        }
                     }
                 }
             }
