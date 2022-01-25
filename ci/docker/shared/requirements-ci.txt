@@ -1,3 +1,4 @@
 devpi-client
+paramiko
 pylint
 twine
