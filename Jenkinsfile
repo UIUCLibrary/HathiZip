@@ -157,7 +157,6 @@ pipeline {
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
         booleanParam(name: 'TEST_PACKAGES_ON_MAC', defaultValue: false, description: 'Test Python packages on Mac')
-        booleanParam(name: 'PACKAGE_CX_FREEZE', defaultValue: false, description: 'Create a package with CX_Freeze')
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
@@ -472,72 +471,34 @@ pipeline {
         }
         stage('Packaging') {
             stages{
-                stage('Create'){
-                    parallel {
-                        stage('Source and Wheel formats'){
-                            agent {
-                                dockerfile {
-                                    filename DEFAULT_AGENT.filename
-                                    label DEFAULT_AGENT.label
-                                    additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                                }
-                            }
-                            steps{
-                                timeout(5){
-                                    sh 'python setup.py sdist -d dist bdist_wheel -d dist'
-                                }
-                            }
-                            post{
-                                success{
-                                    archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
-                                    stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'dist'
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns: [
-                                            [pattern: 'build/', type: 'INCLUDE'],
-                                            [pattern: 'dist/', type: 'INCLUDE'],
-                                            [pattern: 'logs/', type: 'INCLUDE'],
-                                            [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                        ]
-                                    )
-                                }
-                            }
+                stage('Source and Wheel formats'){
+                    agent {
+                        dockerfile {
+                            filename DEFAULT_AGENT.filename
+                            label DEFAULT_AGENT.label
+                            additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
                         }
-                        stage('Windows CX_Freeze MSI'){
-                            agent {
-                                dockerfile {
-                                    filename 'ci/docker/python/windows/build/msvc/Dockerfile'
-                                    label 'windows && docker'
-                                }
-                            }
-                            when{
-                                equals expected: true, actual: params.PACKAGE_CX_FREEZE
-                                beforeAgent true
-                            }
-                            steps{
-                                timeout(15){
-                                    bat 'python cx_setup.py bdist_msi --add-to-path=true -k --bdist-dir build/msi -d dist'
-                                }
-                            }
-                            post{
-                                success{
-                                    stash includes: 'dist/*.msi', name: 'msi'
-                                    archiveArtifacts artifacts: 'dist/*.msi', fingerprint: true
-                                }
-                                cleanup{
-                                    cleanWs(
-                                        deleteDirs: true,
-                                        patterns: [
-                                            [pattern: 'build/', type: 'INCLUDE'],
-                                            [pattern: 'dist/', type: 'INCLUDE'],
-                                            [pattern: 'logs/', type: 'INCLUDE'],
-                                            [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
-                                        ]
-                                    )
-                                }
-                            }
+                    }
+                    steps{
+                        timeout(5){
+                            sh 'python setup.py sdist -d dist bdist_wheel -d dist'
+                        }
+                    }
+                    post{
+                        success{
+                            archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
+                            stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'dist'
+                        }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: 'HathiZip.egg-info/', type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
