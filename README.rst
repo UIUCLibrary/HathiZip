@@ -10,5 +10,5 @@ Documentation can be found `here <http://www.library.illinois.edu/dccdocs/hathi_
 Master Branch:
 
 .. image:: https://jenkins.library.illinois.edu/buildStatus/icon?job=OpenSourceProjects/HathiZip/master
-    :target: https://jenkins.library.illinois.edu/view/Henry/job/OpenSourceProjects/job/HathiZip/job/master
+    :target: https://jenkins.library.illinois.edu/job/OpenSourceProjects/job/HathiZip/job/master/
     
