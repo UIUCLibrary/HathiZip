@@ -552,7 +552,7 @@ pipeline {
                             def linuxTests = [:]
                             SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
                                 SUPPORTED_ARCHITECTURES.each{ processorArchitecture ->
-                                    linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
+                                    linuxTests["Linux - Python ${pythonVersion}-${processorArchitecture}: sdist"] = {
                                         packages.testPkg(
                                             agent: [
                                                 dockerfile: [
@@ -567,7 +567,7 @@ pipeline {
                                             pythonVersion: pythonVersion
                                         )
                                     }
-                                    linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+                                    linuxTests["Linux - Python ${pythonVersion}-${processorArchitecture}: wheel"] = {
                                         packages.testPkg(
                                             agent: [
                                                 dockerfile: [
