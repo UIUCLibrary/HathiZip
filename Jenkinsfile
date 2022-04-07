@@ -154,8 +154,10 @@ pipeline {
     parameters {
         string(name: 'PROJECT_NAME', defaultValue: 'HathiTrust Zip for Submit', description: 'Name given to the project')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
-        booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
-        booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
+// todo: turn TEST_RUN_TOX to defaultParameterValues.USE_SONARQUBE
+        booleanParam(name: 'USE_SONARQUBE', defaultValue: false, description: 'Send data test data to SonarQube')
+// todo: turn TEST_RUN_TOX to false
+        booleanParam(name: 'TEST_RUN_TOX', defaultValue: true, description: 'Run Tox Tests')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
         booleanParam(name: 'TEST_PACKAGES_ON_MAC', defaultValue: false, description: 'Test Python packages on Mac')
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
@@ -445,14 +447,14 @@ pipeline {
                             def linuxJobs
                             stage('Scanning Tox Environments'){
                                 parallel(
-//                                     'Linux x86':{
-//                                         linuxJobs = tox.getToxTestsParallel(
-//                                                 envNamePrefix: 'Tox Linux-x86',
-//                                                 label: 'linux && docker && x86',
-//                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-//                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-//                                             )
-//                                     },
+                                    'Linux x86':{
+                                        linuxJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: 'Tox Linux-x86',
+                                                label: 'linux && docker && x86',
+                                                dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                            )
+                                    },
                                     'Linux ARM':{
                                         linuxJobs = tox.getToxTestsParallel(
                                                 envNamePrefix: 'Tox Linux-ARM',
