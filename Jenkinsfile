@@ -142,8 +142,8 @@ Name = ${metadata.Name}
     }
 }
 
-// startup()
-// def props = get_props()
+startup()
+def props = get_props()
 
 pipeline {
     agent none
@@ -220,16 +220,16 @@ pipeline {
                             zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
                             stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                         }
-//                         cleanup{
-//                             cleanWs(
-//                                 deleteDirs: true,
-//                                 patterns: [
-//                                     [pattern: 'dist/', type: 'INCLUDE'],
-//                                     [pattern: 'build/', type: 'INCLUDE'],
-//                                     [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
-//                                 ]
-//                             )
-//                         }
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
+                                ]
+                            )
+                        }
                     }
                 }
             }
