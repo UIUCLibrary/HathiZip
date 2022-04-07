@@ -162,7 +162,7 @@ def getToxTestsParallel(args = [:]){
             def tox_result
             def githubChecksName = "Tox: ${tox_env} ${envNamePrefix}"
             def jenkinsStageName = "${envNamePrefix} ${tox_env}"
-            echo 'collectEntries running'
+            echo "collectEntries running ${jenkinsStageName}"
             [jenkinsStageName,{
                 node(originalNodeLabel){
                     ws{
