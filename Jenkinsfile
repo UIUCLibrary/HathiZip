@@ -445,14 +445,14 @@ pipeline {
                             def linuxJobs
                             stage('Scanning Tox Environments'){
                                 parallel(
-                                    'Linux x86':{
-                                        linuxJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: 'Tox Linux-x86',
-                                                label: 'linux && docker && x86',
-                                                dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                            )
-                                    },
+//                                     'Linux x86':{
+//                                         linuxJobs = tox.getToxTestsParallel(
+//                                                 envNamePrefix: 'Tox Linux-x86',
+//                                                 label: 'linux && docker && x86',
+//                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
+//                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+//                                             )
+//                                     },
                                     'Linux ARM':{
                                         linuxJobs = tox.getToxTestsParallel(
                                                 envNamePrefix: 'Tox Linux-ARM',
