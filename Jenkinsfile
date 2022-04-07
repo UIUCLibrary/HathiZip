@@ -444,7 +444,8 @@ pipeline {
                     steps {
                         script{
                             def windowsJobs
-                            def linuxJobs
+                            def linuxJobsX86
+                            def linuxJobsArm
                             stage('Scanning Tox Environments'){
                                 parallel(
                                     'Linux x86':{
