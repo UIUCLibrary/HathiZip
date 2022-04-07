@@ -158,12 +158,12 @@ def getToxTestsParallel(args = [:]){
 
         }
         echo "Adding jobs to ${originalNodeLabel}"
-        def jobs = envs.collectEntries({ tox_env ->
+        def jobs = envs.collectEntries{ tox_env ->
             def tox_result
             def githubChecksName = "Tox: ${tox_env} ${envNamePrefix}"
             def jenkinsStageName = "${envNamePrefix} ${tox_env}"
             echo "collectEntries running ${jenkinsStageName}"
-            return [jenkinsStageName,{
+            [jenkinsStageName,{
                 node(originalNodeLabel){
                     ws{
                         checkout scm
@@ -222,7 +222,7 @@ def getToxTestsParallel(args = [:]){
                     }
                 }
             }]
-        })
+        }
         return jobs
     }
 }
