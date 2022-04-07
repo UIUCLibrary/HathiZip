@@ -53,7 +53,7 @@ PYPI_SERVERS = [
 
 def DEFAULT_AGENT = [
     filename: 'ci/docker/python/linux/testing/Dockerfile',
-    label: 'linux && docker',
+    label: 'docker && !windows',
     additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
 ]
 def DOCKER_PLATFORM_BUILD_ARGS = [
