@@ -102,7 +102,7 @@ def startup(){
                 }
             },
             'Getting Distribution Info': {
-                node('linux && docker') {
+                node('docker && !windows') {
                     timeout(2){
                         ws{
                             checkout scm
