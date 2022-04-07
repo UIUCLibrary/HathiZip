@@ -448,7 +448,7 @@ pipeline {
                             stage('Scanning Tox Environments'){
                                 parallel(
                                     'Linux x86':{
-                                        linuxJobs = tox.getToxTestsParallel(
+                                        linuxJobsX86 = tox.getToxTestsParallel(
                                                 envNamePrefix: 'Tox Linux-x86',
                                                 label: 'linux && docker && x86',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
@@ -456,25 +456,25 @@ pipeline {
                                             )
                                     },
                                     'Linux ARM':{
-                                        linuxJobs = tox.getToxTestsParallel(
+                                        linuxJobsArm = tox.getToxTestsParallel(
                                                 envNamePrefix: 'Tox Linux-ARM',
                                                 label: 'linux && docker && arm',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                             )
                                     },
-//                                     'Windows':{
-//                                         windowsJobs = tox.getToxTestsParallel(
-//                                                 envNamePrefix: 'Tox Windows',
-//                                                 label: 'windows && docker',
-//                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-//                                                 dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-//                                             )
-//                                     },
+                                    'Windows':{
+                                        windowsJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: 'Tox Windows',
+                                                label: 'windows && docker',
+                                                dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
+                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                            )
+                                    },
                                     failFast: true
                                 )
                             }
-                            parallel(windowsJobs + linuxJobs)
+                            parallel(windowsJobs + linuxJobsX86 + linuxJobsArm)
                         }
                     }
                 }
