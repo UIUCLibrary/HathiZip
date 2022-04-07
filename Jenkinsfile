@@ -53,7 +53,7 @@ PYPI_SERVERS = [
 
 def DEFAULT_AGENT = [
     filename: 'ci/docker/python/linux/testing/Dockerfile',
-    label: 'docker && !windows',
+    label: 'docker && linux',
     additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
 ]
 def DOCKER_PLATFORM_BUILD_ARGS = [
@@ -102,7 +102,7 @@ def startup(){
                 }
             },
             'Getting Distribution Info': {
-                node('docker && !windows') {
+                node('docker && linux') {
                     timeout(2){
                         ws{
                             checkout scm
@@ -390,7 +390,7 @@ pipeline {
                                     def agent = [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/testing/Dockerfile',
-                                                label: 'docker && !windows',
+                                                label: 'docker && linux',
                                                 additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 args: '--mount source=sonar-cache-hathi_zip,target=/home/user/.sonar/cache',
                                             ]
@@ -674,7 +674,7 @@ pipeline {
                         dockerfile {
                             additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}"
                             filename 'ci/docker/python/linux/tox/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && devpi-access'
                         }
                     }
                     steps {
@@ -712,7 +712,7 @@ pipeline {
                                 macPackages["Test Python ${pythonVersion}: wheel Mac"] = {
                                     devpi.testDevpiPackage(
                                         agent: [
-                                            label: "mac && python${pythonVersion}"
+                                            label: "mac && python${pythonVersion} && devpi-access"
                                         ],
                                         devpi: [
                                             index: getDevPiStagingIndex(),
@@ -745,7 +745,7 @@ pipeline {
                                 macPackages["Test Python ${pythonVersion}: sdist Mac"]= {
                                     devpi.testDevpiPackage(
                                         agent: [
-                                            label: "mac && python${pythonVersion}"
+                                            label: "mac && python${pythonVersion} && devpi-access"
                                         ],
                                         devpi: [
                                             index: getDevPiStagingIndex(),
@@ -784,7 +784,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
                                                 additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
-                                                label: 'windows && docker'
+                                                label: 'windows && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
@@ -805,7 +805,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
                                                 additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
-                                                label: 'windows && docker'
+                                                label: 'windows && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
@@ -829,7 +829,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}",
-                                                label: 'linux && docker'
+                                                label: 'linux && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
@@ -850,7 +850,7 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}",
-                                                label: 'linux && docker'
+                                                label: 'linux && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
@@ -889,7 +889,7 @@ pipeline {
                         dockerfile {
                             additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}"
                             filename 'ci/docker/python/linux/tox/Dockerfile'
-                            label 'linux && docker'
+                            label 'linux && docker && devpi-access'
                         }
                     }
                     input {
@@ -911,7 +911,7 @@ pipeline {
             }
             post{
                 success{
-                    node('linux && docker') {
+                    node('linux && docker && devpi-access') {
                         script{
                             if (!env.TAG_NAME?.trim()){
                                 docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
@@ -929,7 +929,7 @@ pipeline {
                     }
                 }
                 cleanup{
-                    node('linux && docker') {
+                    node('linux && docker && devpi-access') {
                        script{
                             docker.build('hathizip:devpi',"-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
                                 devpi.removePackage(
