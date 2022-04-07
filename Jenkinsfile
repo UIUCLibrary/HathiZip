@@ -16,6 +16,7 @@ def getDevPiStagingIndex(){
 // ----------------------------------------------------------------------------
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
 SUPPORTED_LINUX_VERSIONS = ['3.6', '3.7', '3.8', '3.9', '3.10']
+SUPPORTED_ARCHITECTURES = ["x86", "arm"]
 SUPPORTED_WINDOWS_VERSIONS = ['3.6', '3.7', '3.8', '3.9', '3.10']
 
 // ============================================================================
@@ -52,8 +53,7 @@ PYPI_SERVERS = [
 
 def DEFAULT_AGENT = [
     filename: 'ci/docker/python/linux/testing/Dockerfile',
-    label: 'arm',
-//     label: 'linux && docker',
+    label: 'linux && docker',
     additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
 ]
 def DOCKER_PLATFORM_BUILD_ARGS = [
@@ -551,34 +551,36 @@ pipeline {
 
                             def linuxTests = [:]
                             SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
-                                linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
-                                    packages.testPkg(
-                                        agent: [
-                                            dockerfile: [
-                                                label: 'linux && docker',
-                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                            ]
-                                        ],
-                                        retryTimes: 3,
-                                        glob: 'dist/*.tar.gz',
-                                        stash: 'dist',
-                                        pythonVersion: pythonVersion
-                                    )
-                                }
-                                linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
-                                    packages.testPkg(
-                                        agent: [
-                                            dockerfile: [
-                                                label: 'linux && docker',
-                                                filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                            ]
-                                        ],
-                                        glob: 'dist/*.whl',
-                                        stash: 'dist',
-                                        pythonVersion: pythonVersion
-                                    )
+                                SUPPORTED_ARCHITECTURES.each{ processorArchitecture ->
+                                    linuxTests["Linux - Python ${pythonVersion}: sdist"] = {
+                                        packages.testPkg(
+                                            agent: [
+                                                dockerfile: [
+                                                    label: "linux && docker && ${processorArchitecture}",
+                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                ]
+                                            ],
+                                            retryTimes: 3,
+                                            glob: 'dist/*.tar.gz',
+                                            stash: 'dist',
+                                            pythonVersion: pythonVersion
+                                        )
+                                    }
+                                    linuxTests["Linux - Python ${pythonVersion}: wheel"] = {
+                                        packages.testPkg(
+                                            agent: [
+                                                dockerfile: [
+                                                    label: "linux && docker && ${processorArchitecture}",
+                                                    filename: 'ci/docker/python/linux/tox/Dockerfile',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                ]
+                                            ],
+                                            glob: 'dist/*.whl',
+                                            stash: 'dist',
+                                            pythonVersion: pythonVersion
+                                        )
+                                    }
                                 }
                             }
 
