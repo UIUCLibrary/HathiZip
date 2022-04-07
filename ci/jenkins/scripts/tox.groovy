@@ -150,7 +150,7 @@ def getToxTestsParallel(args = [:]){
                 )
             }
         }
-        echo "Found tox environments for ${envs.join(', ')} to run on ${originalNodeLabel}"
+        echo "Found tox environments for ${envs.join(', ')}"
         def dockerImageForTesting
         node(originalNodeLabel){
             checkout scm
@@ -158,11 +158,11 @@ def getToxTestsParallel(args = [:]){
 
         }
         echo "Adding jobs to ${originalNodeLabel}"
-        def jobs = envs.collectEntries{ tox_env ->
+        def jobs = envs.collectEntries({ tox_env ->
             def tox_result
             def githubChecksName = "Tox: ${tox_env} ${envNamePrefix}"
             def jenkinsStageName = "${envNamePrefix} ${tox_env}"
-            echo "collectEntries running ${jenkinsStageName}"
+
             [jenkinsStageName,{
                 node(originalNodeLabel){
                     ws{
@@ -222,8 +222,7 @@ def getToxTestsParallel(args = [:]){
                     }
                 }
             }]
-        }
-        print(jobs)
+        })
         return jobs
     }
 }
