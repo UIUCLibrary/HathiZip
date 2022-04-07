@@ -150,7 +150,7 @@ def getToxTestsParallel(args = [:]){
                 )
             }
         }
-        echo "Found tox environments for ${envs.join(', ')}"
+        echo "Found tox environments for ${envs.join(', ')} to run on ${originalNodeLabel}"
         def dockerImageForTesting
         node(originalNodeLabel){
             checkout scm
