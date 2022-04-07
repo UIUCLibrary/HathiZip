@@ -223,6 +223,7 @@ def getToxTestsParallel(args = [:]){
                 }
             }]
         }
+        print(jobs)
         return jobs
     }
 }
