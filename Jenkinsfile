@@ -71,6 +71,19 @@ defaultParameterValues = [
 def tox
 
 
+def checkForArmNode(){
+    def jenkins = Jenkins.instance
+    def computers = jenkins.computers
+    computers.each {
+        println "${it.displayName} ${it.hostName}"
+    }
+
+    def labels = jenkins.getLabels()
+    labels.each {
+       println "${it.displayName}"
+    }
+}
+
 node(){
     checkout scm
     tox = load('ci/jenkins/scripts/tox.groovy')
@@ -142,6 +155,7 @@ Name = ${metadata.Name}
     }
 }
 
+checkForArmNode()
 startup()
 def props = get_props()
 
