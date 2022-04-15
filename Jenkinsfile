@@ -442,22 +442,13 @@ pipeline {
                     steps {
                         script{
                             def windowsJobs
-                            def linuxJobsX86
-                            def linuxJobsArm
+                            def linuxJobs
                             stage('Scanning Tox Environments'){
                                 parallel(
-                                    'Linux x86':{
-                                        linuxJobsX86 = tox.getToxTestsParallel(
-                                                envNamePrefix: 'Tox Linux-x86',
-                                                label: 'linux && docker && x86',
-                                                dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                            )
-                                    },
-                                    'Linux ARM':{
-                                        linuxJobsArm = tox.getToxTestsParallel(
-                                                envNamePrefix: 'Tox Linux-ARM',
-                                                label: 'linux && docker && arm',
+                                    'Linux':{
+                                        linuxJobs = tox.getToxTestsParallel(
+                                                envNamePrefix: 'Tox Linux',
+                                                label: 'linux && docker',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                             )
@@ -473,7 +464,7 @@ pipeline {
                                     failFast: true
                                 )
                             }
-                            parallel(windowsJobs + linuxJobsX86 + linuxJobsArm)
+                            parallel(windowsJobs + linuxJobs)
                         }
                     }
                 }
