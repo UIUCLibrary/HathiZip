@@ -390,7 +390,7 @@ pipeline {
                                     def agent = [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/testing/Dockerfile',
-                                                label: 'docker && linux',
+                                                label: 'docker && linux && x86',
                                                 additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 args: '--mount source=sonar-cache-hathi_zip,target=/home/user/.sonar/cache',
                                             ]
