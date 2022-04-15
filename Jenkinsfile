@@ -552,9 +552,10 @@ pipeline {
                             def linuxTests = [:]
                             SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
                                 def architectures = ['x86']
-                                if(INCLUDE_ARM == true){
+                                if(params.INCLUDE_ARM == true){
                                     architectures.add("arm")
                                 }
+                                echo "I have ${architectures}"
                                 architectures.each{ processorArchitecture ->
                                     linuxTests["Linux - Python ${pythonVersion}-${processorArchitecture}: sdist"] = {
                                         packages.testPkg(
