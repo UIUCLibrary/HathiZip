@@ -28,7 +28,7 @@ def submitToSonarcloud(args = [:]){
                             unstash "$it"
                         }
                         def projectVersion = args.package.version
-
+                        sh(label: "Checking sonar version", script: 'sonar-scanner --version')
                         if (isPullRequest == true){
                             def pullRequestKey = args.pullRequest.source
                             def pullRequestBase = args.pullRequest.destination
