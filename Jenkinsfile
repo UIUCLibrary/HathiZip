@@ -16,7 +16,6 @@ def getDevPiStagingIndex(){
 // ----------------------------------------------------------------------------
 SUPPORTED_MAC_VERSIONS = ['3.8', '3.9', '3.10']
 SUPPORTED_LINUX_VERSIONS = ['3.6', '3.7', '3.8', '3.9', '3.10']
-SUPPORTED_ARCHITECTURES = ["x86", "arm"]
 SUPPORTED_WINDOWS_VERSIONS = ['3.6', '3.7', '3.8', '3.9', '3.10']
 
 // ============================================================================
@@ -157,6 +156,7 @@ pipeline {
         booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
+        booleanParam(name: 'INCLUDE_ARM', defaultValue: false, description: 'Include ARM architecture')
         booleanParam(name: 'TEST_PACKAGES_ON_MAC', defaultValue: false, description: 'Test Python packages on Mac')
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
@@ -551,7 +551,11 @@ pipeline {
 
                             def linuxTests = [:]
                             SUPPORTED_LINUX_VERSIONS.each{ pythonVersion ->
-                                SUPPORTED_ARCHITECTURES.each{ processorArchitecture ->
+                                def architectures = ['x86']
+                                if(INCLUDE_ARM == true){
+                                    architectures.add("arm")
+                                }
+                                architectures.each{ processorArchitecture ->
                                     linuxTests["Linux - Python ${pythonVersion}-${processorArchitecture}: sdist"] = {
                                         packages.testPkg(
                                             agent: [
