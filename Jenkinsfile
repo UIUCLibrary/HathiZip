@@ -365,7 +365,6 @@ pipeline {
                         stage('Run Sonarqube Analysis'){
                             options{
                                 lock('hathizip-sonarscanner')
-                                retry(3)
                             }
                             when{
                                 equals expected: true, actual: params.USE_SONARQUBE
@@ -377,6 +376,7 @@ pipeline {
                                         credentialsId: SONARQUBE_CREDENTIAL_ID,
                                         projectVersion: props.Version
                                     )
+                                    milestone label: 'sonarcloud'
                                 }
                             }
                             post {
