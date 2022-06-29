@@ -201,12 +201,14 @@ pipeline {
                 }
                 stage('Building Sphinx Documentation'){
                     steps {
-                        sh(
-                            label: 'Building docs',
-                            script: '''mkdir -p logs
-                                       python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log
-                                       '''
-                        )
+                        catchError(buildResult: 'SUCCESS', message: 'Error building documentation', stageResult: 'UNSTABLE') {
+                            sh(
+                                label: 'Building docs',
+                                script: '''mkdir -p logs
+                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                           '''
+                            )
+                        }
                     }
                     post{
                         always {
