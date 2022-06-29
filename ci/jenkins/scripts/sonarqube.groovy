@@ -2,73 +2,38 @@ def get_sonarqube_unresolved_issues(report_task_file){
     script{
 
         def props = readProperties  file: '.scannerwork/report-task.txt'
-        def response = httpRequest url : props['serverUrl'] + "/api/issues/search?componentKeys=" + props['projectKey'] + "&resolved=no"
+        def response = httpRequest url : props['serverUrl'] + '/api/issues/search?componentKeys=' + props['projectKey'] + '&resolved=no'
         def outstandingIssues = readJSON text: response.content
         return outstandingIssues
     }
 }
 
 
-def submitToSonarcloud(args = [:]){
-//     def nodeLabel = args.label
-    def reportStashes = args['reportStashes']
-    def artifactStash = args['artifactStash']
-    def dockerImageName = args['dockerImageName'] ? args['dockerImageName']: "${currentBuild.fullProjectName}:sonarqube".replaceAll("-", "").replaceAll('/', "").replaceAll(' ', "").toLowerCase()
-    def dockerfileAgent = args.agent.dockerfile
-    def isPullRequest = args['pullRequest'] ? true: false
-    def buildString = args['buildString'] ? args['buildString']: env.BUILD_TAG
-    def installationName = args.sonarqube.installationName
-    def credentialsId = args.sonarqube.credentialsId
-    node(dockerfileAgent.label){
-        docker.build(dockerImageName, "-f ${dockerfileAgent.filename} ${dockerfileAgent.additionalBuildArgs} ${WORKSPACE}").inside(dockerfileAgent.args){
-            script{
-                try{
-                    withSonarQubeEnv(installationName: installationName, credentialsId: credentialsId) {
-                        reportStashes.each{
-                            unstash "$it"
-                        }
-                        def projectVersion = args.package.version
-                        sh(label: "Checking sonar version", script: 'sonar-scanner --version')
-                        if (isPullRequest == true){
-                            def pullRequestKey = args.pullRequest.source
-                            def pullRequestBase = args.pullRequest.destination
-                            sh(
-                                label: "Running Sonar Scanner",
-                                script:"sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.pullrequest.key=${pullRequestKey} -Dsonar.pullrequest.base=${pullRequestBase}"
-                                )
-                        } else {
-                            def branchName =  args['branchName'] ? args['branchName']: env.BRANCH_NAME
-                            sh(
-                                label: "Running Sonar Scanner",
-                                script: "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${buildString}\" -Dsonar.branch.name=${branchName}"
-                                )
-                        }
-                    }
+def sonarcloudSubmit(args = [:]){
+    def outputJson = args.outputJson ? args.outputJson: "reports/sonar-report.json"
+    def projectVersion = args.projectVersion
+    def sonarCredentialsId = args.credentialsId
+   
 
-                    timeout(60){
-                        def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                        if (sonarqube_result.status != 'OK') {
-                            unstable "SonarQube quality gate: ${sonarqube_result.status}"
-                        }
-                        def outstandingIssues = get_sonarqube_unresolved_issues(".scannerwork/report-task.txt")
-                        writeJSON( file: 'reports/sonar-report.json', json: outstandingIssues)
-                        if(artifactStash != null){
-                            stash(includes: "reports/sonar-report.json", name: artifactStash)
-                        }
-                    }
-                } finally {
-                    cleanWs(
-                        deleteDirs: true,
-                        patterns: [
-                                [pattern: '.scannerwork/', type: 'INCLUDE']
-                            ]
-                    )
+    withSonarQubeEnv(installationName:'sonarcloud', credentialsId: args.credentialsId) {
+        echo "args = ${args}"
+        def command
+        if (env.CHANGE_ID){
+            command = "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.pullrequest.key=${env.CHANGE_ID} -Dsonar.pullrequest.base=${env.CHANGE_TARGET}"
+        } else {
+            command = "sonar-scanner -Dsonar.projectVersion=${projectVersion} -Dsonar.buildString=\"${env.BUILD_TAG}\" -Dsonar.branch.name=${env.BRANCH_NAME}"
 
-                }
-            }
         }
-
+        echo "command = ${command}"
+        sh command
     }
+    timeout(time: 1, unit: 'HOURS') {
+         def sonarqube_result = waitForQualityGate(abortPipeline: false)
+         if (sonarqube_result.status != 'OK') {
+             unstable "SonarQube quality gate: ${sonarqube_result.status}"
+         }
+         def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
+         writeJSON file: outputJson, json: outstandingIssues
+     }
 }
-
 return this

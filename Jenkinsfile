@@ -238,15 +238,17 @@ pipeline {
             }
             stages{
                 stage('Code Quality'){
+                    agent {
+                        dockerfile {
+                            filename DEFAULT_AGENT.filename
+                            label DEFAULT_AGENT.label
+                            additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                            args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache'
+                        }
+                    }
                     stages{
                         stage('Run Test'){
-                            agent {
-                                dockerfile {
-                                    filename DEFAULT_AGENT.filename
-                                    label DEFAULT_AGENT.label
-                                    additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                                }
-                            }
+
                             stages{
                                 stage('Set up Tests'){
                                     steps{
@@ -363,75 +365,44 @@ pipeline {
                         stage('Run Sonarqube Analysis'){
                             options{
                                 lock('hathizip-sonarscanner')
-                                retry(3)
                             }
                             when{
                                 equals expected: true, actual: params.USE_SONARQUBE
-                                beforeAgent true
                                 beforeOptions true
                             }
                             steps{
                                 script{
-                                    def sonarqube
-                                    node(){
-                                        checkout scm
-                                        sonarqube = load('ci/jenkins/scripts/sonarqube.groovy')
-                                    }
-                                    def stashes = [
-                                        'COVERAGE_REPORT_DATA',
-                                        'PYTEST_UNIT_TEST_RESULTS',
-                                        'PYLINT_REPORT',
-                                        'FLAKE8_REPORT'
-                                    ]
-                                    def sonarqubeConfig = [
-                                        installationName: 'sonarcloud',
+                                    load('ci/jenkins/scripts/sonarqube.groovy').sonarcloudSubmit(
                                         credentialsId: SONARQUBE_CREDENTIAL_ID,
-                                    ]
-                                    def agent = [
-                                            dockerfile: [
-                                                filename: 'ci/docker/python/linux/testing/Dockerfile',
-                                                label: 'docker && linux && x86',
-                                                additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                args: '--mount source=sonar-cache-hathi_zip,target=/home/user/.sonar/cache',
-                                            ]
-                                        ]
-                                    if (env.CHANGE_ID){
-                                        sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            pullRequest: [
-                                                source: env.CHANGE_ID,
-                                                destination: env.BRANCH_NAME,
-                                            ],
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                            ],
-                                        )
-                                    } else {
-                                        sonarqube.submitToSonarcloud(
-                                            agent: agent,
-                                            reportStashes: stashes,
-                                            artifactStash: 'sonarqube artifacts',
-                                            sonarqube: sonarqubeConfig,
-                                            package: [
-                                                version: props.Version,
-                                                name: props.Name
-                                            ]
-                                        )
-                                    }
+                                        projectVersion: props.Version
+                                    )
+                                    milestone label: 'sonarcloud'
                                 }
                             }
                             post {
                                 always{
-                                    node(''){
-                                        unstash 'sonarqube artifacts'
-                                        recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                    }
+                                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                 }
                             }
+                        }
+                    }
+                    post{
+                        cleanup{
+                            cleanWs(
+                                deleteDirs: true,
+                                patterns: [
+                                    [pattern: '.coverage/', type: 'INCLUDE'],
+                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                    [pattern: '.scannerwork/', type: 'INCLUDE'],
+                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                    [pattern: 'build/', type: 'INCLUDE'],
+                                    [pattern: 'coverage/', type: 'INCLUDE'],
+                                    [pattern: 'dist/', type: 'INCLUDE'],
+                                    [pattern: 'logs/', type: 'INCLUDE'],
+                                    [pattern: 'reports/', type: 'INCLUDE'],
+                                ]
+                            )
                         }
                     }
                 }
