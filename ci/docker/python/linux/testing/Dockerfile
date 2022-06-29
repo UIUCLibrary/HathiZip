@@ -1,9 +1,10 @@
 ARG PYTHON_VERSION=3.10
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
+ARG SONAR_SCANNER_VERSION=4.7.0.2747
 
-FROM python:${PYTHON_VERSION} as wheel_builder
-
+FROM python:${PYTHON_VERSION} as base_image
+FROM base_image as wheel_builder
 ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
@@ -12,7 +13,31 @@ RUN python -m pip install --upgrade pip &&  \
     pip wheel --wheel-dir=/wheels -r /tmp/requirements-dev.txt && \
     pip wheel --wheel-dir=/wheels -r /tmp/requirements-ci.txt
 
-FROM python:${PYTHON_VERSION}
+FROM base_image as SONAR_BUILDER
+RUN apt-get update && \
+    apt-get install -y unzip
+
+ARG SONAR_SCANNER_VERSION
+ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
+ENV SONAR_USER_HOME=/opt/sonar/.sonar
+
+RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
+  https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux.zip && \
+    unzip -o /tmp/sonar-scanner.zip -d /opt/sonar/ && \
+    rm /tmp/sonar-scanner.zip && \
+    mkdir -p $SONAR_USER_HOME/cache && \
+    chmod -R 777 "${SONAR_USER_HOME}" &&\
+    ln -s /opt/sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    which sonar-scanner
+
+
+RUN curl --create-dirs -sSLo /tmp/build-wrapper-linux-x86.zip https://sonarcloud.io/static/cpp/build-wrapper-linux-x86.zip && \
+    unzip -o /tmp/build-wrapper-linux-x86.zip -d /opt/ && \
+    ln -s /opt/build-wrapper-linux-x86/build-wrapper-linux-x86-64 /usr/local/bin/build-wrapper-linux-x86-64 && \
+    which build-wrapper-linux-x86-64
+#==============================================================================
+
+FROM base_image
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
@@ -22,20 +47,17 @@ RUN groupadd -g $GROUP_ID user && \
 RUN apt update -y && apt install -y libgl1-mesa-glx && \
     rm -rf /var/lib/apt/lists/*
 
+COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
+ARG SONAR_SCANNER_VERSION
+ENV SONAR_SCANNER_OPTS="-server"
+RUN ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    mkdir -p /.sonar/cache && \
+    chmod -R 777 /.sonar/cache && \
+    which sonar-scanner
+ENV SONAR_USER_HOME=/opt/sonar/.sonar
 COPY --from=wheel_builder /wheels /wheels/
 ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
 RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt -r /tmp/requirements-dev.txt -r /tmp/requirements-ci.txt
 ENV PIP_FIND_LINKS=/wheels
 USER user
 WORKDIR /home/user
-
-ENV SONAR_SCANNER_VERSION=4.7.0.2747
-ENV SONAR_SCANNER_HOME=/home/user/.sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
-RUN curl --create-dirs -sSLo $HOME/.sonar/sonar-scanner.zip \
-        https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip && \
-    unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/ && \
-    rm $HOME/.sonar/sonar-scanner.zip && \
-    mkdir -p /home/user/.sonar/cache && \
-    chown user:user /home/user/.sonar/cache
-ENV PATH=$SONAR_SCANNER_HOME/bin:$PATH
-ENV SONAR_SCANNER_OPTS="-server"
