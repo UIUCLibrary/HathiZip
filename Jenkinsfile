@@ -372,7 +372,14 @@ pipeline {
                             }
                             steps{
                                 script{
-                                    load('ci/jenkins/scripts/sonarqube.groovy').sonarcloudSubmit(
+                                    def sonarqube = fileLoader.fromGit(
+                                        'sonarqube',
+                                        'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                        '3',
+                                        null,
+                                        ''
+                                    )
+                                    sonarqube.sonarcloudSubmit(
                                         credentialsId: SONARQUBE_CREDENTIAL_ID,
                                         projectVersion: props.Version
                                     )
