@@ -201,22 +201,24 @@ pipeline {
                 }
                 stage('Building Sphinx Documentation'){
                     steps {
-                        sh(
-                            label: 'Building docs',
-                            script: '''mkdir -p logs
-                                       python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log
-                                       '''
-                        )
+                        catchError(buildResult: 'SUCCESS', message: 'Error building documentation', stageResult: 'UNSTABLE') {
+                            sh(
+                                label: 'Building docs',
+                                script: '''mkdir -p logs
+                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                           '''
+                            )
+                        }
                     }
                     post{
                         always {
                             recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
                             archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                            zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                            stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                         }
                         success{
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                            zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
-                            stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                         }
                         cleanup{
                             cleanWs(
@@ -372,7 +374,14 @@ pipeline {
                             }
                             steps{
                                 script{
-                                    load('ci/jenkins/scripts/sonarqube.groovy').sonarcloudSubmit(
+                                    def sonarqube = fileLoader.fromGit(
+                                        'sonarqube',
+                                        'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                        '3',
+                                        null,
+                                        ''
+                                    )
+                                    sonarqube.sonarcloudSubmit(
                                         credentialsId: SONARQUBE_CREDENTIAL_ID,
                                         projectVersion: props.Version
                                     )
