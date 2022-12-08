@@ -84,6 +84,7 @@ COPY --from=WHEEL_BUILDER_PY38 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY39 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY310 /wheels/* /wheels/
 ENV PIP_FIND_LINKS=/wheels
-RUN pip3 install tox "devpi-client<6.0"
+COPY requirements/ /tmp/requirements
+RUN pip3 install -r /tmp/requirements/requirements_tox.txt "devpi-client<6.0"
 WORKDIR /src
 CMD tox --workdir /tmp/tox --recreate

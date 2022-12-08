@@ -535,7 +535,6 @@ pipeline {
                                 if(params.INCLUDE_ARM == true){
                                     architectures.add("arm")
                                 }
-                                echo "I have ${architectures}"
                                 architectures.each{ processorArchitecture ->
                                     linuxTests["Linux - Python ${pythonVersion}-${processorArchitecture}: sdist"] = {
                                         packages.testPkg(
@@ -586,9 +585,10 @@ pipeline {
                                                 sh(
                                                     label:'Install Tox',
                                                     script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
+                                                              . ./venv/bin/activate
+                                                              python -m pip install --upgrade pip
+                                                              pip install -r requirements/requirements_tox.txt
+                                                            '''
                                                 )
                                             },
                                             testTeardown: {
@@ -612,9 +612,10 @@ pipeline {
                                                 sh(
                                                     label:'Install Tox',
                                                     script: '''python3 -m venv venv
-                                                               venv/bin/pip install pip --upgrade
-                                                               venv/bin/pip install tox
-                                                               '''
+                                                               . ./venv/bin/activate
+                                                               python -m pip install --upgrade pip
+                                                               pip install -r requirements/requirements_tox.txt
+                                                            '''
                                                 )
                                             },
                                             testTeardown: {
