@@ -1,13 +1,3 @@
-
-
-def getDevPiStagingIndex(){
-
-    if (env.TAG_NAME?.trim()){
-        return 'tag_staging'
-    } else{
-        return "${env.BRANCH_NAME}_staging"
-    }
-}
 // ****************************************************************************
 //  Constants
 //
@@ -19,49 +9,41 @@ SUPPORTED_LINUX_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
 SUPPORTED_WINDOWS_VERSIONS = ['3.7', '3.8', '3.9', '3.10']
 
 // ============================================================================
-CONFIGURATIONS = [
-    '3.6': [
-        test_docker_image: 'python:3.6-windowsservercore',
-        tox_env: 'py36'
-        ],
-    '3.7': [
-        test_docker_image: 'python:3.7',
-        tox_env: 'py37'
-        ],
-    '3.8': [
-        test_docker_image: 'python:3.8',
-        tox_env: 'py38'
-        ],
-    '3.9': [
-        test_docker_image: 'python:3.9',
-        tox_env: 'py39'
-        ]
-]
 
-def DEVPI_CONFIG = [
-    index: getDevPiStagingIndex(),
-    server: 'https://devpi.library.illinois.edu',
-    credentialsId: 'DS_devpi',
-]
+def getDevpiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'devpi_config', variable: 'CONFIG_FILE')]) {
+            def configProperties = readProperties(file: CONFIG_FILE)
+            configProperties.stagingIndex = {
+                if (env.TAG_NAME?.trim()){
+                    return 'tag_staging'
+                } else{
+                    return "${env.BRANCH_NAME}_staging"
+                }
+            }()
+            return configProperties
+        }
+    }
+}
+def DEVPI_CONFIG = getDevpiConfig()
 
-PYPI_SERVERS = [
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
-    ]
+def getPypiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'pypi_config', variable: 'CONFIG_FILE')]) {
+            def config = readJSON( file: CONFIG_FILE)
+            return config['deployment']['indexes']
+        }
+    }
+}
 
 def DEFAULT_AGENT = [
     filename: 'ci/docker/python/linux/testing/Dockerfile',
     label: 'linux && docker && x86',
-    additionalBuildArgs: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
-]
-def DOCKER_PLATFORM_BUILD_ARGS = [
-    linux: '--build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)',
-    windows: ''
+    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
 ]
 
+
 SONARQUBE_CREDENTIAL_ID = 'sonartoken-hathizip'
-DEVPI_STAGING_INDEX = "DS_Jenkins/${getDevPiStagingIndex()}"
 
 defaultParameterValues = [
     USE_SONARQUBE: false
@@ -165,253 +147,269 @@ pipeline {
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
-        stage('Build'){
-            agent {
-                dockerfile {
-                    filename DEFAULT_AGENT.filename
-                    label DEFAULT_AGENT.label
-                    additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                }
-            }
-            stages{
-                stage('Python Package'){
-                    steps {
-                        tee('logs/build.log'){
-                            sh(script: '''mkdir -p logs
-                                          python setup.py build -b build
-                                          '''
-                            )
-                        }
-                    }
-                    post{
-                        always{
-                            archiveArtifacts artifacts: 'logs/build.log'
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE']
-                                ]
-                            )
-                        }
-
-                    }
-                }
-                stage('Building Sphinx Documentation'){
-                    steps {
-                        catchError(buildResult: 'SUCCESS', message: 'Error building documentation', stageResult: 'UNSTABLE') {
-                            sh(
-                                label: 'Building docs',
-                                script: '''mkdir -p logs
-                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
-                                           '''
-                            )
-                        }
-                    }
-                    post{
-                        always {
-                            recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
-                            zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
-                            stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
-                        }
-                        success{
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
-                                ]
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        stage('Checks') {
+        stage('Building and Testing'){
             when{
-                equals expected: true, actual: params.RUN_CHECKS
+                anyOf{
+                    equals expected: true, actual: params.RUN_CHECKS
+                    equals expected: true, actual: params.TEST_RUN_TOX
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                }
             }
             stages{
-                stage('Code Quality'){
+                stage('Build'){
                     agent {
-                        dockerfile {
-                            filename DEFAULT_AGENT.filename
-                            label DEFAULT_AGENT.label
-                            additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                            args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache'
+                         dockerfile {
+                             filename DEFAULT_AGENT.filename
+                             label DEFAULT_AGENT.label
+                             additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                         }
+                    }
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.RUN_CHECKS
+                            equals expected: true, actual: params.DEPLOY_DEVPI
                         }
+                        beforeAgent true
                     }
                     stages{
-                        stage('Run Test'){
-
-                            stages{
-                                stage('Set up Tests'){
-                                    steps{
-                                        sh '''mkdir -p logs
-                                              python setup.py build
-                                              mkdir -p reports
-                                              '''
-                                    }
+                        stage('Python build'){
+                            steps {
+                                tee('logs/build.log'){
+                                    sh(script: '''mkdir -p logs
+                                                  python setup.py build -b build
+                                                  '''
+                                    )
                                 }
-                                stage('Run Tests'){
-                                    parallel{
-                                        stage('PyTest'){
+                            }
+                            post{
+                                always{
+                                    archiveArtifacts artifacts: 'logs/build.log'
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE']
+                                        ]
+                                    )
+                                }
+                            }
+                        }
+                        stage('Building Sphinx Documentation'){
+                            steps {
+                                catchError(buildResult: 'SUCCESS', message: 'Error building documentation', stageResult: 'UNSTABLE') {
+                                    sh(
+                                        label: 'Building docs',
+                                        script: '''mkdir -p logs
+                                                   python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                   '''
+                                    )
+                                }
+                            }
+                            post{
+                                always {
+                                    recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
+                                    archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                                    zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                                    stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
+                                }
+                                success{
+                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                                }
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
+                                        ]
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                stage('Checks') {
+                    when{
+                        equals expected: true, actual: params.RUN_CHECKS
+                    }
+                    stages{
+                        stage('Code Quality'){
+                            agent {
+                                dockerfile {
+                                    filename DEFAULT_AGENT.filename
+                                    label DEFAULT_AGENT.label
+                                    additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                                    args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache'
+                                }
+                            }
+                            stages{
+                                stage('Run Test'){
+                                    stages{
+                                        stage('Set up Tests'){
                                             steps{
-                                                sh(label: 'Running pytest',
-                                                    script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
-                                                )
-                                            }
-                                            post {
-                                                always{
-                                                    stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
-                                                    junit 'reports/tests/pytest/pytest-junit.xml'
-                                                }
+                                                sh '''mkdir -p logs
+                                                      python setup.py build
+                                                      mkdir -p reports
+                                                      '''
                                             }
                                         }
-                                        stage('Run Pylint Static Analysis') {
-                                            steps{
-                                                catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                                    sh(label: 'Running pylint',
-                                                        script: 'pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
-                                                    )
-                                                }
-                                                sh(
-                                                    script: 'pylint hathizip -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
-                                                    label: 'Running pylint for sonarqube',
-                                                    returnStatus: true
-                                                )
-                                            }
-                                            post{
-                                                always{
-                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                    stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
-                                                }
-                                            }
-                                        }
-                                        stage('Doctest'){
-                                            steps{
-                                                unstash 'DOCS_ARCHIVE'
-                                                sh 'coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v'
-                                            }
-                                            post{
-                                                failure{
-                                                    sh 'ls -R build/docs/'
-                                                }
-                                            }
-                                        }
-                                        stage('Task Scanner'){
-                                            steps{
-                                                recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'hathizip/**/*.py', normalTags: 'TODO')])
-                                            }
-                                        }
-                                        stage('MyPy'){
-                                            steps{
-                                                sh 'mkdir -p reports/mypy && mkdir -p logs'
-                                                catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
-                                                    tee('logs/mypy.log'){
-                                                        sh(
-                                                            script: 'mypy -p hathizip --html-report reports/mypy/mypy_html'
+                                        stage('Run Tests'){
+                                            parallel{
+                                                stage('PyTest'){
+                                                    steps{
+                                                        sh(label: 'Running pytest',
+                                                            script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
                                                         )
+                                                    }
+                                                    post {
+                                                        always{
+                                                            stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
+                                                            junit 'reports/tests/pytest/pytest-junit.xml'
+                                                        }
+                                                    }
+                                                }
+                                                stage('Run Pylint Static Analysis') {
+                                                    steps{
+                                                        catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                            sh(label: 'Running pylint',
+                                                                script: 'pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
+                                                            )
+                                                        }
+                                                        sh(
+                                                            script: 'pylint hathizip -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
+                                                            label: 'Running pylint for sonarqube',
+                                                            returnStatus: true
+                                                        )
+                                                    }
+                                                    post{
+                                                        always{
+                                                            recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                            stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
+                                                        }
+                                                    }
+                                                }
+                                                stage('Doctest'){
+                                                    steps{
+                                                        unstash 'DOCS_ARCHIVE'
+                                                        sh 'coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v'
+                                                    }
+                                                    post{
+                                                        failure{
+                                                            sh 'ls -R build/docs/'
+                                                        }
+                                                    }
+                                                }
+                                                stage('Task Scanner'){
+                                                    steps{
+                                                        recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'hathizip/**/*.py', normalTags: 'TODO')])
+                                                    }
+                                                }
+                                                stage('MyPy'){
+                                                    steps{
+                                                        sh 'mkdir -p reports/mypy && mkdir -p logs'
+                                                        catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
+                                                            tee('logs/mypy.log'){
+                                                                sh(
+                                                                    script: 'mypy -p hathizip --html-report reports/mypy/mypy_html'
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                    post{
+                                                        always {
+                                                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                                            recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                                        }
+                                                    }
+                                                }
+                                                stage('Run Flake8 Static Analysis') {
+                                                    steps{
+                                                        catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
+                                                            sh(label: 'Running flake8',
+                                                               script: 'flake8 hathizip --tee --output-file=logs/flake8.log'
+                                                            )
+                                                        }
+                                                    }
+                                                    post {
+                                                        always {
+                                                            stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
+                                                            recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                                        }
                                                     }
                                                 }
                                             }
-                                            post{
-                                                always {
-                                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                                }
-                                            }
                                         }
-                                        stage('Run Flake8 Static Analysis') {
-                                            steps{
-                                                catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
-                                                    sh(label: 'Running flake8',
-                                                       script: 'flake8 hathizip --tee --output-file=logs/flake8.log'
+                                    }
+                                    post{
+                                        always{
+                                            sh(label: 'combining coverage data',
+                                               script: '''coverage combine
+                                                          coverage xml -o ./reports/coverage.xml
+                                                          '''
+                                            )
+                                            stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
+                                            publishCoverage(
+                                                        adapters: [
+                                                                coberturaAdapter('reports/coverage.xml')
+                                                            ],
+                                                        sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
                                                     )
-                                                }
-                                            }
-                                            post {
-                                                always {
-                                                    stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
-                                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                                }
-                                            }
+                                        }
+                                    }
+                                }
+                                stage('Run Sonarqube Analysis'){
+                                    options{
+                                        lock('hathizip-sonarscanner')
+                                    }
+                                    when{
+                                        equals expected: true, actual: params.USE_SONARQUBE
+                                        beforeOptions true
+                                    }
+                                    steps{
+                                        script{
+                                            def sonarqube = fileLoader.fromGit(
+                                                'sonarqube',
+                                                'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                                '3',
+                                                null,
+                                                ''
+                                            )
+                                            sonarqube.sonarcloudSubmit(
+                                                credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                                projectVersion: props.Version
+                                            )
+                                            milestone label: 'sonarcloud'
+                                        }
+                                    }
+                                    post {
+                                        always{
+                                            recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                         }
                                     }
                                 }
                             }
                             post{
-                                always{
-                                    sh(label: 'combining coverage data',
-                                       script: '''coverage combine
-                                                  coverage xml -o ./reports/coverage.xml
-                                                  '''
+                                cleanup{
+                                    cleanWs(
+                                        deleteDirs: true,
+                                        patterns: [
+                                            [pattern: '.coverage/', type: 'INCLUDE'],
+                                            [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                            [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                            [pattern: '.scannerwork/', type: 'INCLUDE'],
+                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                            [pattern: 'build/', type: 'INCLUDE'],
+                                            [pattern: 'coverage/', type: 'INCLUDE'],
+                                            [pattern: 'dist/', type: 'INCLUDE'],
+                                            [pattern: 'logs/', type: 'INCLUDE'],
+                                            [pattern: 'reports/', type: 'INCLUDE'],
+                                        ]
                                     )
-                                    stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
-                                    publishCoverage(
-                                                adapters: [
-                                                        coberturaAdapter('reports/coverage.xml')
-                                                    ],
-                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                            )
                                 }
                             }
-                        }
-                        stage('Run Sonarqube Analysis'){
-                            options{
-                                lock('hathizip-sonarscanner')
-                            }
-                            when{
-                                equals expected: true, actual: params.USE_SONARQUBE
-                                beforeOptions true
-                            }
-                            steps{
-                                script{
-                                    def sonarqube = fileLoader.fromGit(
-                                        'sonarqube',
-                                        'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-                                        '3',
-                                        null,
-                                        ''
-                                    )
-                                    sonarqube.sonarcloudSubmit(
-                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
-                                        projectVersion: props.Version
-                                    )
-                                    milestone label: 'sonarcloud'
-                                }
-                            }
-                            post {
-                                always{
-                                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                }
-                            }
-                        }
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: '.coverage/', type: 'INCLUDE'],
-                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                    [pattern: '.scannerwork/', type: 'INCLUDE'],
-                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'coverage/', type: 'INCLUDE'],
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                    [pattern: 'reports/', type: 'INCLUDE'],
-                                ]
-                            )
                         }
                     }
                 }
@@ -438,7 +436,7 @@ pipeline {
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
                                             )
                                     },
                                     failFast: true
@@ -503,7 +501,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                                 ]
                                             ],
                                             retryTimes: 3,
@@ -518,7 +516,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                                                 ]
                                             ],
                                             retryTimes: 3,
@@ -658,7 +656,7 @@ pipeline {
                 stage('Uploading to DevPi Staging'){
                     agent {
                         dockerfile {
-                            additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}"
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                             filename 'ci/docker/python/linux/tox/Dockerfile'
                             label 'linux && docker && devpi-access'
                         }
@@ -669,9 +667,9 @@ pipeline {
                             unstash 'dist'
                             script{
                                 devpi.upload(
-                                        server: 'https://devpi.library.illinois.edu',
-                                        credentialsId: 'DS_devpi',
-                                        index: getDevPiStagingIndex(),
+                                        server: DEVPI_CONFIG.server,
+                                        credentialsId: DEVPI_CONFIG.credentialsId,
+                                        index: DEVPI_CONFIG.stagingIndex,
                                         clientDir: './devpi'
                                     )
                             }
@@ -702,9 +700,9 @@ pipeline {
                                                 label: "mac && python${pythonVersion} && devpi-access"
                                             ],
                                             devpi: [
-                                                index: getDevPiStagingIndex(),
-                                                server: 'https://devpi.library.illinois.edu',
-                                                credentialsId: 'DS_devpi',
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
                                                 devpiExec: 'venv/bin/devpi'
                                             ],
                                             package:[
@@ -714,12 +712,14 @@ pipeline {
                                             ],
                                             test:[
                                                 setup: {
+                                                    checkout scm
                                                     sh(
                                                         label:'Installing Devpi client',
                                                         script: '''python3 -m venv venv
-                                                                    venv/bin/python -m pip install pip --upgrade
-                                                                    venv/bin/python -m pip install devpi_client tox
-                                                                    '''
+                                                                   . venv/bin/activate
+                                                                   python -m pip install pip --upgrade
+                                                                   python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                                '''
                                                     )
                                                 },
                                                 toxEnv: "py${pythonVersion}".replace('.',''),
@@ -737,9 +737,9 @@ pipeline {
                                                 label: "mac && python${pythonVersion} && devpi-access"
                                             ],
                                             devpi: [
-                                                index: getDevPiStagingIndex(),
-                                                server: 'https://devpi.library.illinois.edu',
-                                                credentialsId: 'DS_devpi',
+                                                index: DEVPI_CONFIG.stagingIndex,
+                                                server: DEVPI_CONFIG.server,
+                                                credentialsId: DEVPI_CONFIG.credentialsId,
                                                 devpiExec: 'venv/bin/devpi'
                                             ],
                                             package:[
@@ -749,12 +749,14 @@ pipeline {
                                             ],
                                             test:[
                                                 setup: {
+                                                    checkout scm
                                                     sh(
                                                         label:'Installing Devpi client',
                                                         script: '''python3 -m venv venv
-                                                                    venv/bin/python -m pip install pip --upgrade
-                                                                    venv/bin/python -m pip install devpi_client tox
-                                                                    '''
+                                                                   . venv/bin/activate
+                                                                   python -m pip install pip --upgrade
+                                                                   python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                                '''
                                                     )
                                                 },
                                                 toxEnv: "py${pythonVersion}".replace('.',''),
@@ -773,12 +775,16 @@ pipeline {
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 label: 'windows && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -794,12 +800,16 @@ pipeline {
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}",
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 label: 'windows && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -818,12 +828,16 @@ pipeline {
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}",
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 label: 'linux && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -839,12 +853,16 @@ pipeline {
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}",
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
                                                 label: 'linux && docker && devpi-access'
                                             ]
                                         ],
                                         retryTimes: 3,
-                                        devpi: DEVPI_CONFIG,
+                                        devpi: [
+                                            index: DEVPI_CONFIG.stagingIndex,
+                                            server: DEVPI_CONFIG.server,
+                                            credentialsId: DEVPI_CONFIG.credentialsId,
+                                        ],
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
@@ -877,7 +895,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            additionalBuildArgs "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']}"
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
                             filename 'ci/docker/python/linux/tox/Dockerfile'
                             label 'linux && docker && devpi-access'
                         }
@@ -890,10 +908,10 @@ pipeline {
                             devpi.pushPackageToIndex(
                                 pkgName: props.Name,
                                 pkgVersion: props.Version,
-                                server: 'https://devpi.library.illinois.edu',
-                                indexSource: DEVPI_STAGING_INDEX,
+                                server: DEVPI_CONFIG.server,
+                                indexSource: DEVPI_CONFIG.stagingIndex,
                                 indexDestination: 'production/release',
-                                credentialsId: 'DS_devpi'
+                                credentialsId: DEVPI_CONFIG.credentialsId
                             )
                         }
                     }
@@ -904,14 +922,14 @@ pipeline {
                     node('linux && docker && devpi-access') {
                         script{
                             if (!env.TAG_NAME?.trim()){
-                                docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
+                                docker.build("hathizip:devpi","-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .").inside{
                                     devpi.pushPackageToIndex(
                                             pkgName: props.Name,
                                             pkgVersion: props.Version,
-                                            server: 'https://devpi.library.illinois.edu',
-                                            indexSource: DEVPI_STAGING_INDEX,
+                                            server: DEVPI_CONFIG.server,
+                                            indexSource: DEVPI_CONFIG.stagingIndex,
                                             indexDestination: "DS_Jenkins/${env.BRANCH_NAME}",
-                                            credentialsId: 'DS_devpi'
+                                            credentialsId: DEVPI_CONFIG.credentialsId
                                         )
                                 }
                             }
@@ -921,13 +939,13 @@ pipeline {
                 cleanup{
                     node('linux && docker && devpi-access') {
                        script{
-                            docker.build('hathizip:devpi',"-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['linux']} .").inside{
+                            docker.build('hathizip:devpi','-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .').inside{
                                 devpi.removePackage(
                                     pkgName: props.Name,
                                     pkgVersion: props.Version,
-                                    index: DEVPI_STAGING_INDEX,
-                                    server: 'https://devpi.library.illinois.edu',
-                                    credentialsId: 'DS_devpi',
+                                    index: DEVPI_CONFIG.stagingIndex,
+                                    server: DEVPI_CONFIG.server,
+                                    credentialsId: DEVPI_CONFIG.credentialsId,
                                 )
                             }
                        }
@@ -957,7 +975,7 @@ pipeline {
                         message 'Upload to pypi server?'
                         parameters {
                             choice(
-                                choices: PYPI_SERVERS,
+                                choices: getPypiConfig(),
                                 description: 'Url to the pypi index to upload python packages.',
                                 name: 'SERVER_URL'
                             )
