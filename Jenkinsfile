@@ -196,8 +196,15 @@ pipeline {
                              additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
                          }
                     }
+                    when{
+                        anyOf{
+                            equals expected: true, actual: params.RUN_CHECKS
+                            equals expected: true, actual: params.DEPLOY_DEVPI
+                        }
+                        beforeAgent true
+                    }
                     stages{
-                        stage('Python Package'){
+                        stage('Python build'){
                             steps {
                                 tee('logs/build.log'){
                                     sh(script: '''mkdir -p logs
