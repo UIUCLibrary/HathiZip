@@ -8,18 +8,6 @@ RUN apt update && \
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 
-FROM wheel_builder_base as WHEEL_BUILDER_PY36
-ARG PIP_EXTRA_INDEX_URL
-ARG PIP_INDEX_URL
-
-COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
-RUN PYTHON=python3.6 && \
-    $PYTHON -m pip install pip --upgrade pip && \
-    $PYTHON -m pip install wheel && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -r /tmp/requirements-dev.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements-ci.txt && \
-    $PYTHON -m pip wheel -w /wheels --no-cache-dir -v -r /tmp/requirements.txt
-
 # ==============================================================================
 FROM wheel_builder_base as WHEEL_BUILDER_PY37
 ARG PIP_EXTRA_INDEX_URL
@@ -78,7 +66,6 @@ RUN PYTHON=python3.10 && \
 FROM wheel_builder_base
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
-COPY --from=WHEEL_BUILDER_PY36 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY37 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY38 /wheels/* /wheels/
 COPY --from=WHEEL_BUILDER_PY39 /wheels/* /wheels/
