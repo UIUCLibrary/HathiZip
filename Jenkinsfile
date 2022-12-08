@@ -179,289 +179,299 @@ pipeline {
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
-        stage('Build'){
-            agent {
-                dockerfile {
-                    filename DEFAULT_AGENT.filename
-                    label DEFAULT_AGENT.label
-                    additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                }
-            }
-            stages{
-                stage('Python Package'){
-                    steps {
-                        tee('logs/build.log'){
-                            sh(script: '''mkdir -p logs
-                                          python setup.py build -b build
-                                          '''
-                            )
-                        }
-                    }
-                    post{
-                        always{
-                            archiveArtifacts artifacts: 'logs/build.log'
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE']
-                                ]
-                            )
-                        }
-
-                    }
-                }
-                stage('Building Sphinx Documentation'){
-                    steps {
-                        catchError(buildResult: 'SUCCESS', message: 'Error building documentation', stageResult: 'UNSTABLE') {
-                            sh(
-                                label: 'Building docs',
-                                script: '''mkdir -p logs
-                                           python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
-                                           '''
-                            )
-                        }
-                    }
-                    post{
-                        always {
-                            recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
-                            archiveArtifacts artifacts: 'logs/build_sphinx.log'
-                            zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
-                            stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
-                        }
-                        success{
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
-                        }
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
-                                ]
-                            )
-                        }
-                    }
-                }
-            }
-        }
-        stage('Checks') {
+        stage('Building and Testing'){
             when{
-                equals expected: true, actual: params.RUN_CHECKS
+                anyOf{
+                    equals expected: true, actual: params.RUN_CHECKS
+                    equals expected: true, actual: params.TEST_RUN_TOX
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                }
             }
             stages{
-                stage('Code Quality'){
+                stage('Build'){
                     agent {
-                        dockerfile {
-                            filename DEFAULT_AGENT.filename
-                            label DEFAULT_AGENT.label
-                            additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                            args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache'
-                        }
+                         dockerfile {
+                             filename DEFAULT_AGENT.filename
+                             label DEFAULT_AGENT.label
+                             additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                         }
                     }
-                    stages{
-                        stage('Run Test'){
-
-                            stages{
-                                stage('Set up Tests'){
-                                    steps{
-                                        sh '''mkdir -p logs
-                                              python setup.py build
-                                              mkdir -p reports
+                stages{
+                    stage('Python Package'){
+                        steps {
+                            tee('logs/build.log'){
+                                sh(script: '''mkdir -p logs
+                                              python setup.py build -b build
                                               '''
-                                    }
-                                }
-                                stage('Run Tests'){
-                                    parallel{
-                                        stage('PyTest'){
-                                            steps{
-                                                sh(label: 'Running pytest',
-                                                    script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
-                                                )
-                                            }
-                                            post {
-                                                always{
-                                                    stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
-                                                    junit 'reports/tests/pytest/pytest-junit.xml'
-                                                }
-                                            }
-                                        }
-                                        stage('Run Pylint Static Analysis') {
-                                            steps{
-                                                catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
-                                                    sh(label: 'Running pylint',
-                                                        script: 'pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
-                                                    )
-                                                }
-                                                sh(
-                                                    script: 'pylint hathizip -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
-                                                    label: 'Running pylint for sonarqube',
-                                                    returnStatus: true
-                                                )
-                                            }
-                                            post{
-                                                always{
-                                                    recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                    stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
-                                                }
-                                            }
-                                        }
-                                        stage('Doctest'){
-                                            steps{
-                                                unstash 'DOCS_ARCHIVE'
-                                                sh 'coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v'
-                                            }
-                                            post{
-                                                failure{
-                                                    sh 'ls -R build/docs/'
-                                                }
-                                            }
-                                        }
-                                        stage('Task Scanner'){
-                                            steps{
-                                                recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'hathizip/**/*.py', normalTags: 'TODO')])
-                                            }
-                                        }
-                                        stage('MyPy'){
-                                            steps{
-                                                sh 'mkdir -p reports/mypy && mkdir -p logs'
-                                                catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
-                                                    tee('logs/mypy.log'){
-                                                        sh(
-                                                            script: 'mypy -p hathizip --html-report reports/mypy/mypy_html'
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                            post{
-                                                always {
-                                                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
-                                                    recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
-                                                }
-                                            }
-                                        }
-                                        stage('Run Flake8 Static Analysis') {
-                                            steps{
-                                                catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
-                                                    sh(label: 'Running flake8',
-                                                       script: 'flake8 hathizip --tee --output-file=logs/flake8.log'
-                                                    )
-                                                }
-                                            }
-                                            post {
-                                                always {
-                                                    stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
-                                                    recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            post{
-                                always{
-                                    sh(label: 'combining coverage data',
-                                       script: '''coverage combine
-                                                  coverage xml -o ./reports/coverage.xml
-                                                  '''
-                                    )
-                                    stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
-                                    publishCoverage(
-                                                adapters: [
-                                                        coberturaAdapter('reports/coverage.xml')
-                                                    ],
-                                                sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
-                                            )
-                                }
-                            }
-                        }
-                        stage('Run Sonarqube Analysis'){
-                            options{
-                                lock('hathizip-sonarscanner')
-                            }
-                            when{
-                                equals expected: true, actual: params.USE_SONARQUBE
-                                beforeOptions true
-                            }
-                            steps{
-                                script{
-                                    def sonarqube = fileLoader.fromGit(
-                                        'sonarqube',
-                                        'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
-                                        '3',
-                                        null,
-                                        ''
-                                    )
-                                    sonarqube.sonarcloudSubmit(
-                                        credentialsId: SONARQUBE_CREDENTIAL_ID,
-                                        projectVersion: props.Version
-                                    )
-                                    milestone label: 'sonarcloud'
-                                }
-                            }
-                            post {
-                                always{
-                                    recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
-                                }
-                            }
-                        }
-                    }
-                    post{
-                        cleanup{
-                            cleanWs(
-                                deleteDirs: true,
-                                patterns: [
-                                    [pattern: '.coverage/', type: 'INCLUDE'],
-                                    [pattern: '.mypy_cache/', type: 'INCLUDE'],
-                                    [pattern: '.pytest_cache/', type: 'INCLUDE'],
-                                    [pattern: '.scannerwork/', type: 'INCLUDE'],
-                                    [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                    [pattern: 'build/', type: 'INCLUDE'],
-                                    [pattern: 'coverage/', type: 'INCLUDE'],
-                                    [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'logs/', type: 'INCLUDE'],
-                                    [pattern: 'reports/', type: 'INCLUDE'],
-                                ]
-                            )
-                        }
-                    }
-                }
-                stage('Run Tox'){
-                    when{
-                        equals expected: true, actual: params.TEST_RUN_TOX
-                    }
-                    steps {
-                        script{
-                            def windowsJobs
-                            def linuxJobs
-                            stage('Scanning Tox Environments'){
-                                parallel(
-                                    'Linux':{
-                                        linuxJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: 'Tox Linux',
-                                                label: 'linux && docker',
-                                                dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
-                                            )
-                                    },
-                                    'Windows':{
-                                        windowsJobs = tox.getToxTestsParallel(
-                                                envNamePrefix: 'Tox Windows',
-                                                label: 'windows && docker',
-                                                dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
-                                            )
-                                    },
-                                    failFast: true
                                 )
                             }
-                            parallel(windowsJobs + linuxJobs)
+                        }
+                        post{
+                            always{
+                                archiveArtifacts artifacts: 'logs/build.log'
+                            }
+                            cleanup{
+                                cleanWs(
+                                    deleteDirs: true,
+                                    patterns: [
+                                        [pattern: 'dist/', type: 'INCLUDE'],
+                                        [pattern: 'build/', type: 'INCLUDE']
+                                    ]
+                                )
+                            }
+                        }
+                    }
+                    stage('Building Sphinx Documentation'){
+                        steps {
+                            catchError(buildResult: 'SUCCESS', message: 'Error building documentation', stageResult: 'UNSTABLE') {
+                                sh(
+                                    label: 'Building docs',
+                                    script: '''mkdir -p logs
+                                               python -m sphinx docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                               '''
+                                )
+                            }
+                        }
+                        post{
+                            always {
+                                recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
+                                archiveArtifacts artifacts: 'logs/build_sphinx.log'
+                                zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                                stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
+                            }
+                            success{
+                                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
+                            }
+                            cleanup{
+                                cleanWs(
+                                    deleteDirs: true,
+                                    patterns: [
+                                        [pattern: 'dist/', type: 'INCLUDE'],
+                                        [pattern: 'build/', type: 'INCLUDE'],
+                                        [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
+                                    ]
+                                )
+                            }
                         }
                     }
                 }
+             }
+             stage('Checks') {
+                 when{
+                     equals expected: true, actual: params.RUN_CHECKS
+                 }
+                 stages{
+                     stage('Code Quality'){
+                         agent {
+                             dockerfile {
+                                 filename DEFAULT_AGENT.filename
+                                 label DEFAULT_AGENT.label
+                                 additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                                 args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache'
+                             }
+                         }
+                         stages{
+                             stage('Run Test'){
+
+                                 stages{
+                                     stage('Set up Tests'){
+                                         steps{
+                                             sh '''mkdir -p logs
+                                                   python setup.py build
+                                                   mkdir -p reports
+                                                   '''
+                                         }
+                                     }
+                                     stage('Run Tests'){
+                                         parallel{
+                                             stage('PyTest'){
+                                                 steps{
+                                                     sh(label: 'Running pytest',
+                                                         script: 'coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
+                                                     )
+                                                 }
+                                                 post {
+                                                     always{
+                                                         stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
+                                                         junit 'reports/tests/pytest/pytest-junit.xml'
+                                                     }
+                                                 }
+                                             }
+                                             stage('Run Pylint Static Analysis') {
+                                                 steps{
+                                                     catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
+                                                         sh(label: 'Running pylint',
+                                                             script: 'pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
+                                                         )
+                                                     }
+                                                     sh(
+                                                         script: 'pylint hathizip -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
+                                                         label: 'Running pylint for sonarqube',
+                                                         returnStatus: true
+                                                     )
+                                                 }
+                                                 post{
+                                                     always{
+                                                         recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
+                                                         stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
+                                                     }
+                                                 }
+                                             }
+                                             stage('Doctest'){
+                                                 steps{
+                                                     unstash 'DOCS_ARCHIVE'
+                                                     sh 'coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v'
+                                                 }
+                                                 post{
+                                                     failure{
+                                                         sh 'ls -R build/docs/'
+                                                     }
+                                                 }
+                                             }
+                                             stage('Task Scanner'){
+                                                 steps{
+                                                     recordIssues(tools: [taskScanner(highTags: 'FIXME', includePattern: 'hathizip/**/*.py', normalTags: 'TODO')])
+                                                 }
+                                             }
+                                             stage('MyPy'){
+                                                 steps{
+                                                     sh 'mkdir -p reports/mypy && mkdir -p logs'
+                                                     catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
+                                                         tee('logs/mypy.log'){
+                                                             sh(
+                                                                 script: 'mypy -p hathizip --html-report reports/mypy/mypy_html'
+                                                             )
+                                                         }
+                                                     }
+                                                 }
+                                                 post{
+                                                     always {
+                                                         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'reports/mypy/mypy_html', reportFiles: 'index.html', reportName: 'MyPy', reportTitles: ''])
+                                                         recordIssues(tools: [myPy(name: 'MyPy', pattern: 'logs/mypy.log')])
+                                                     }
+                                                 }
+                                             }
+                                             stage('Run Flake8 Static Analysis') {
+                                                 steps{
+                                                     catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
+                                                         sh(label: 'Running flake8',
+                                                            script: 'flake8 hathizip --tee --output-file=logs/flake8.log'
+                                                         )
+                                                     }
+                                                 }
+                                                 post {
+                                                     always {
+                                                         stash includes: 'logs/flake8.log', name: 'FLAKE8_REPORT'
+                                                         recordIssues(tools: [flake8(name: 'Flake8', pattern: 'logs/flake8.log')])
+                                                     }
+                                                 }
+                                             }
+                                         }
+                                     }
+                                 }
+                                 post{
+                                     always{
+                                         sh(label: 'combining coverage data',
+                                            script: '''coverage combine
+                                                       coverage xml -o ./reports/coverage.xml
+                                                       '''
+                                         )
+                                         stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
+                                         publishCoverage(
+                                                     adapters: [
+                                                             coberturaAdapter('reports/coverage.xml')
+                                                         ],
+                                                     sourceFileResolver: sourceFiles('STORE_ALL_BUILD')
+                                                 )
+                                     }
+                                 }
+                             }
+                             stage('Run Sonarqube Analysis'){
+                                 options{
+                                     lock('hathizip-sonarscanner')
+                                 }
+                                 when{
+                                     equals expected: true, actual: params.USE_SONARQUBE
+                                     beforeOptions true
+                                 }
+                                 steps{
+                                     script{
+                                         def sonarqube = fileLoader.fromGit(
+                                             'sonarqube',
+                                             'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                             '3',
+                                             null,
+                                             ''
+                                         )
+                                         sonarqube.sonarcloudSubmit(
+                                             credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                             projectVersion: props.Version
+                                         )
+                                         milestone label: 'sonarcloud'
+                                     }
+                                 }
+                                 post {
+                                     always{
+                                         recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                     }
+                                 }
+                             }
+                         }
+                         post{
+                             cleanup{
+                                 cleanWs(
+                                     deleteDirs: true,
+                                     patterns: [
+                                         [pattern: '.coverage/', type: 'INCLUDE'],
+                                         [pattern: '.mypy_cache/', type: 'INCLUDE'],
+                                         [pattern: '.pytest_cache/', type: 'INCLUDE'],
+                                         [pattern: '.scannerwork/', type: 'INCLUDE'],
+                                         [pattern: '**/__pycache__/', type: 'INCLUDE'],
+                                         [pattern: 'build/', type: 'INCLUDE'],
+                                         [pattern: 'coverage/', type: 'INCLUDE'],
+                                         [pattern: 'dist/', type: 'INCLUDE'],
+                                         [pattern: 'logs/', type: 'INCLUDE'],
+                                         [pattern: 'reports/', type: 'INCLUDE'],
+                                     ]
+                                 )
+                             }
+                         }
+                     }
+                     stage('Run Tox'){
+                         when{
+                             equals expected: true, actual: params.TEST_RUN_TOX
+                         }
+                         steps {
+                             script{
+                                 def windowsJobs
+                                 def linuxJobs
+                                 stage('Scanning Tox Environments'){
+                                     parallel(
+                                         'Linux':{
+                                             linuxJobs = tox.getToxTestsParallel(
+                                                     envNamePrefix: 'Tox Linux',
+                                                     label: 'linux && docker',
+                                                     dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
+                                                     dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                 )
+                                         },
+                                         'Windows':{
+                                             windowsJobs = tox.getToxTestsParallel(
+                                                     envNamePrefix: 'Tox Windows',
+                                                     label: 'windows && docker',
+                                                     dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
+                                                     dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL ${DOCKER_PLATFORM_BUILD_ARGS['windows']}"
+                                                 )
+                                         },
+                                         failFast: true
+                                     )
+                                 }
+                                 parallel(windowsJobs + linuxJobs)
+                             }
+                         }
+                     }
+                 }
+             }
             }
         }
         stage('Packaging') {
