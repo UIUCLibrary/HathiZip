@@ -55,11 +55,14 @@ def getDevpiConfig() {
 }
 def DEVPI_CONFIG = getDevpiConfig()
 
-PYPI_SERVERS = [
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_public/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python/',
-    'https://jenkins.library.illinois.edu/nexus/repository/uiuc_prescon_python_testing/'
-    ]
+def getPypiConfig() {
+    node(){
+        configFileProvider([configFile(fileId: 'pypi_config', variable: 'CONFIG_FILE')]) {
+            def config = readJSON( file: CONFIG_FILE)
+            return config['deployment']['indexes']
+        }
+    }
+}
 
 def DEFAULT_AGENT = [
     filename: 'ci/docker/python/linux/testing/Dockerfile',
@@ -972,7 +975,7 @@ pipeline {
                         message 'Upload to pypi server?'
                         parameters {
                             choice(
-                                choices: PYPI_SERVERS,
+                                choices: getPypiConfig(),
                                 description: 'Url to the pypi index to upload python packages.',
                                 name: 'SERVER_URL'
                             )
