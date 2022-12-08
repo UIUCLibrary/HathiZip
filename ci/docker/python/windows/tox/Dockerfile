@@ -1,6 +1,5 @@
 # escape=`
 
-ARG PYTHON_36_VERSION=3.6.8
 ARG PYTHON_37_VERSION=3.7.9
 ARG PYTHON_38_VERSION=3.8.10
 ARG PYTHON_39_VERSION=3.9.7
@@ -42,13 +41,12 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-ARG PYTHON_36_VERSION
 ARG PYTHON_37_VERSION
 ARG PYTHON_38_VERSION
 ARG PYTHON_39_VERSION
 ARG PYTHON_310_VERSION
 
-RUN $PYTHON_VERSIONS = @(${Env:PYTHON_36_VERSION}, ${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
+RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
     foreach( $PYTHON_VERSION in $PYTHON_VERSIONS ){ `
         Write-Host "Installing Python $PYTHON_VERSION with Chocolatey" ; `
         $process = start-process -NoNewWindow -PassThru -FilePath C:\ProgramData\chocolatey\bin\choco.exe -ArgumentList 'install -y --stoponfirstfailure --no-progress --verbose python3', "--version=$PYTHON_VERSION", "-my" -Wait ;`
@@ -64,23 +62,12 @@ RUN $PYTHON_VERSIONS = @(${Env:PYTHON_36_VERSION}, ${Env:PYTHON_37_VERSION}, ${E
     py --list
 
 # ==============================================================================
-FROM BASE_BUILDER as WHEEL_BUilDER_PY36
-SHELL ["cmd", "/S", "/C" ]
-ARG PIP_INDEX_URL
-ARG PIP_EXTRA_INDEX_URL
-COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt c:/requirements/
-ENV PY_PYTHON=3.6
-RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt
-
-# ==============================================================================
 FROM BASE_BUILDER as WHEEL_BUilDER_PY37
 SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt c:/requirements/
+COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.7
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -93,6 +80,7 @@ SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt c:/requirements/
+COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.8
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -106,6 +94,7 @@ SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt c:/requirements/
+COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.9
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -118,6 +107,7 @@ SHELL ["cmd", "/S", "/C" ]
 ARG PIP_INDEX_URL
 ARG PIP_EXTRA_INDEX_URL
 COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt c:/requirements/
+COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.10
 RUN py -m pip install --upgrade pip wheel && `
     py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
@@ -130,14 +120,13 @@ COPY --from=certsgen c:/roots.sst roots.sst
 RUN certutil -addstore -f root roots.sst ; `
     del roots.sst
 
-COPY --from=WHEEL_BUilDER_PY36 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUilDER_PY37 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUilDER_PY38 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUilDER_PY39 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUilDER_PY310 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
-
-RUN python -m pip install pip --upgrade ; pip install tox "devpi-client<6.0"
+COPY requirements/ /tmp/requirements
+RUN python -m pip install pip --upgrade ; pip install -r /tmp/requirements/requirements_tox.txt "devpi-client<6.0"
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate
