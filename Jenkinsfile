@@ -37,7 +37,7 @@ def getPypiConfig() {
 }
 
 def DEFAULT_AGENT = [
-    filename: 'ci/docker/python/linux/testing/Dockerfile',
+    filename: 'ci/docker/python/linux/jenkins/Dockerfile',
     label: 'linux && docker && x86',
     additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
 ]

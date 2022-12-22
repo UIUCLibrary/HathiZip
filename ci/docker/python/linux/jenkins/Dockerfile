@@ -1,15 +1,16 @@
 ARG PYTHON_VERSION=3.10
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
+ARG PIP_FIND_LINKS=/wheels
 ARG SONAR_SCANNER_VERSION=4.7.0.2747
-
 FROM python:${PYTHON_VERSION} as base_image
 FROM base_image as wheel_builder
+ARG PIP_FIND_LINKS
 ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel && \
-    pip wheel --wheel-dir=/wheels  -v \
+    pip wheel --wheel-dir=${PIP_FIND_LINKS}  -v \
       -r /tmp/requirements.txt  \
       -r /tmp/requirements-dev.txt  \
       -r /tmp/requirements-ci.txt
@@ -50,8 +51,9 @@ RUN ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scan
     chmod -R 777 /.sonar/cache && \
     which sonar-scanner
 ENV SONAR_USER_HOME=/opt/sonar/.sonar
-COPY --from=wheel_builder /wheels /wheels/
+ARG PIP_FIND_LINKS
+COPY --from=wheel_builder ${PIP_FIND_LINKS} ${PIP_FIND_LINKS}/
 ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
-RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt -r /tmp/requirements-dev.txt -r /tmp/requirements-ci.txt
-ENV PIP_FIND_LINKS=/wheels
+RUN pip install --no-index --find-links=${PIP_FIND_LINKS} -r /tmp/requirements.txt -r /tmp/requirements-dev.txt -r /tmp/requirements-ci.txt
+ENV PIP_FIND_LINKS=${PIP_FIND_LINKS}
 
