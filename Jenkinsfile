@@ -37,7 +37,7 @@ def getPypiConfig() {
 }
 
 def DEFAULT_AGENT = [
-    filename: 'ci/docker/python/linux/testing/Dockerfile',
+    filename: 'ci/docker/python/linux/jenkins/Dockerfile',
     label: 'linux && docker && x86',
     additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
 ]
@@ -128,15 +128,12 @@ def props = get_props()
 
 pipeline {
     agent none
-//     libraries {
-//       lib('PythonHelpers')
-//       lib('ds-utils')
-//     }
     parameters {
         string(name: 'PROJECT_NAME', defaultValue: 'HathiTrust Zip for Submit', description: 'Name given to the project')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
         booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
+        booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Python packages')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
         booleanParam(name: 'INCLUDE_ARM', defaultValue: false, description: 'Include ARM architecture')
         booleanParam(name: 'TEST_PACKAGES_ON_MAC', defaultValue: false, description: 'Test Python packages on Mac')
@@ -153,6 +150,7 @@ pipeline {
                     equals expected: true, actual: params.RUN_CHECKS
                     equals expected: true, actual: params.TEST_RUN_TOX
                     equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DOCS
                 }
             }
             stages{
@@ -168,6 +166,7 @@ pipeline {
                         anyOf{
                             equals expected: true, actual: params.RUN_CHECKS
                             equals expected: true, actual: params.DEPLOY_DEVPI
+                            equals expected: true, actual: params.DEPLOY_DOCS
                         }
                         beforeAgent true
                     }
@@ -449,6 +448,15 @@ pipeline {
             }
         }
         stage('Packaging') {
+            when{
+                anyOf{
+                    equals expected: true, actual: params.BUILD_PACKAGES
+                    equals expected: true, actual: params.DEPLOY_PYPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                }
+                beforeAgent true
+            }
             stages{
                 stage('Source and Wheel formats'){
                     agent {
