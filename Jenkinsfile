@@ -133,6 +133,7 @@ pipeline {
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
         booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
+        booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Python packages')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
         booleanParam(name: 'INCLUDE_ARM', defaultValue: false, description: 'Include ARM architecture')
         booleanParam(name: 'TEST_PACKAGES_ON_MAC', defaultValue: false, description: 'Test Python packages on Mac')
@@ -447,6 +448,15 @@ pipeline {
             }
         }
         stage('Packaging') {
+            when{
+                anyOf{
+                    equals expected: true, actual: params.BUILD_PACKAGES
+                    equals expected: true, actual: params.DEPLOY_PYPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DEVPI_PRODUCTION
+                }
+                beforeAgent true
+            }
             stages{
                 stage('Source and Wheel formats'){
                     agent {
