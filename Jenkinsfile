@@ -128,10 +128,6 @@ def props = get_props()
 
 pipeline {
     agent none
-//     libraries {
-//       lib('PythonHelpers')
-//       lib('ds-utils')
-//     }
     parameters {
         string(name: 'PROJECT_NAME', defaultValue: 'HathiTrust Zip for Submit', description: 'Name given to the project')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
@@ -153,6 +149,7 @@ pipeline {
                     equals expected: true, actual: params.RUN_CHECKS
                     equals expected: true, actual: params.TEST_RUN_TOX
                     equals expected: true, actual: params.DEPLOY_DEVPI
+                    equals expected: true, actual: params.DEPLOY_DOCS
                 }
             }
             stages{
@@ -168,6 +165,7 @@ pipeline {
                         anyOf{
                             equals expected: true, actual: params.RUN_CHECKS
                             equals expected: true, actual: params.DEPLOY_DEVPI
+                            equals expected: true, actual: params.DEPLOY_DOCS
                         }
                         beforeAgent true
                     }
