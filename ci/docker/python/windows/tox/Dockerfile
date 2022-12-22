@@ -2,8 +2,9 @@
 
 ARG PYTHON_37_VERSION=3.7.9
 ARG PYTHON_38_VERSION=3.8.10
-ARG PYTHON_39_VERSION=3.9.7
-ARG PYTHON_310_VERSION=3.10.0
+ARG PYTHON_39_VERSION=3.9.13
+ARG PYTHON_310_VERSION=3.10.8
+ARG PYTHON_311_VERSION=3.11.0
 
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
 FROM ${FROM_IMAGE} as certsgen
@@ -45,8 +46,10 @@ ARG PYTHON_37_VERSION
 ARG PYTHON_38_VERSION
 ARG PYTHON_39_VERSION
 ARG PYTHON_310_VERSION
+ARG PYTHON_311_VERSION
 
-RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}) ; `
+
+RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${Env:PYTHON_39_VERSION}, ${Env:PYTHON_310_VERSION}, ${Env:PYTHON_311_VERSION} ) ; `
     foreach( $PYTHON_VERSION in $PYTHON_VERSIONS ){ `
         Write-Host "Installing Python $PYTHON_VERSION with Chocolatey" ; `
         $process = start-process -NoNewWindow -PassThru -FilePath C:\ProgramData\chocolatey\bin\choco.exe -ArgumentList 'install -y --stoponfirstfailure --no-progress --verbose python3', "--version=$PYTHON_VERSION", "-my" -Wait ;`
@@ -59,7 +62,15 @@ RUN $PYTHON_VERSIONS = @(${Env:PYTHON_37_VERSION}, ${Env:PYTHON_38_VERSION}, ${E
     } ; `
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
-    py --list
+    py --list ;`
+    py -3.7 --version ;  `
+    py -3.8 --version ; `
+    py -3.9 --version ; `
+    py -3.10 --version ; `
+    py -3.11 --version ; `
+    Write-Host "Installing Python with Chocolatey - Done"
+
+
 
 # ==============================================================================
 FROM BASE_BUILDER as WHEEL_BUilDER_PY37
