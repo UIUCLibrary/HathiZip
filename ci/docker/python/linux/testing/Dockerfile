@@ -9,9 +9,10 @@ ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel && \
-    pip wheel --wheel-dir=/wheels -r /tmp/requirements.txt -v && \
-    pip wheel --wheel-dir=/wheels -r /tmp/requirements-dev.txt && \
-    pip wheel --wheel-dir=/wheels -r /tmp/requirements-ci.txt
+    pip wheel --wheel-dir=/wheels  -v \
+      -r /tmp/requirements.txt  \
+      -r /tmp/requirements-dev.txt  \
+      -r /tmp/requirements-ci.txt
 
 FROM base_image as SONAR_BUILDER
 RUN apt-get update && \
