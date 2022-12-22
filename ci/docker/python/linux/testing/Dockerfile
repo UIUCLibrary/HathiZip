@@ -39,12 +39,6 @@ RUN curl --create-dirs -sSLo /tmp/build-wrapper-linux-x86.zip https://sonarcloud
 #==============================================================================
 
 FROM base_image
-ARG USER_ID=1000
-ARG GROUP_ID=1000
-
-RUN groupadd -g $GROUP_ID user && \
-    useradd -u $USER_ID -s /bin/sh -m -d /home/user -g user user
-
 RUN apt update -y && apt install -y libgl1-mesa-glx && \
     rm -rf /var/lib/apt/lists/*
 
@@ -60,5 +54,4 @@ COPY --from=wheel_builder /wheels /wheels/
 ADD requirements.txt requirements-dev.txt ci/docker/shared/requirements-ci.txt /tmp/
 RUN pip install --no-index --find-links=/wheels -r /tmp/requirements.txt -r /tmp/requirements-dev.txt -r /tmp/requirements-ci.txt
 ENV PIP_FIND_LINKS=/wheels
-USER user
-WORKDIR /home/user
+
