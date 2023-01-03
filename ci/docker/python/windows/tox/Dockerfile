@@ -81,9 +81,10 @@ COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt
 COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.7
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+        -r c:/requirements/requirements-ci.txt `
+        -r c:/requirements/requirements-dev.txt `
+        -r c:/requirements/requirements.txt
 
 # ==============================================================================
 FROM BASE_BUILDER as WHEEL_BUilDER_PY38
@@ -94,9 +95,10 @@ COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt
 COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.8
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+        -r c:/requirements/requirements-ci.txt `
+        -r c:/requirements/requirements-dev.txt `
+        -r c:/requirements/requirements.txt
 
 
 # ==============================================================================
@@ -108,9 +110,10 @@ COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt
 COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.9
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+        -r c:/requirements/requirements-ci.txt `
+        -r c:/requirements/requirements-dev.txt `
+        -r c:/requirements/requirements.txt
 
 # ==============================================================================
 FROM BASE_BUILDER as WHEEL_BUilDER_PY310
@@ -121,10 +124,10 @@ COPY requirements.txt  requirements-dev.txt ci/docker/shared/requirements-ci.txt
 COPY requirements /tmp/requirements
 ENV PY_PYTHON=3.10
 RUN py -m pip install --upgrade pip wheel && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-ci.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements-dev.txt && `
-    py -m pip wheel -w c:\wheels\ --no-cache-dir -r c:/requirements/requirements.txt
-
+    py -m pip wheel -w c:\wheels\ --no-cache-dir  `
+        -r c:/requirements/requirements-ci.txt `
+        -r c:/requirements/requirements-dev.txt `
+        -r c:/requirements/requirements.txt
 # ==============================================================================
 FROM BASE_BUILDER
 COPY --from=certsgen c:/roots.sst roots.sst
