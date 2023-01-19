@@ -49,12 +49,9 @@ defaultParameterValues = [
     USE_SONARQUBE: false
 ]
 // ****************************************************************************
-def tox
-
 
 node(){
     checkout scm
-    tox = load('ci/jenkins/scripts/tox.groovy')
     devpi = load('ci/jenkins/scripts/devpi.groovy')
 }
 
@@ -418,6 +415,13 @@ pipeline {
                     }
                     steps {
                         script{
+                            def tox = fileLoader.fromGit(
+                                    'tox',
+                                    'https://github.com/UIUCLibrary/jenkins_helper_scripts.git',
+                                    '4',
+                                    null,
+                                    ''
+                                    )
                             def windowsJobs
                             def linuxJobs
                             stage('Scanning Tox Environments'){
