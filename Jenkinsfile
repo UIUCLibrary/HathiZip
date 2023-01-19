@@ -49,14 +49,6 @@ defaultParameterValues = [
     USE_SONARQUBE: false
 ]
 // ****************************************************************************
-def tox
-
-
-node(){
-    checkout scm
-    tox = load('ci/jenkins/scripts/tox.groovy')
-    devpi = load('ci/jenkins/scripts/devpi.groovy')
-}
 
 def startup(){
     def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
@@ -418,6 +410,15 @@ pipeline {
                     }
                     steps {
                         script{
+                            def tox
+
+
+                            node(){
+                                checkout scm
+                                tox = load('ci/jenkins/scripts/tox.groovy')
+                                devpi = load('ci/jenkins/scripts/devpi.groovy')
+                            }
+
                             def windowsJobs
                             def linuxJobs
                             stage('Scanning Tox Environments'){
