@@ -518,7 +518,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
                                             retryTimes: 3,
@@ -533,7 +534,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
                                             retryTimes: 3,
@@ -557,7 +559,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
                                             retryTimes: 3,
@@ -572,7 +575,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
                                             glob: 'dist/*.whl',
