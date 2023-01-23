@@ -432,7 +432,8 @@ pipeline {
                                                 label: 'linux && docker',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                dockerRunArgs: '-v pipcache_hathizip:/.cache/pip'
+                                                dockerRunArgs: '-v pipcache_hathizip:/.cache/pip',
+                                                retry: 2
                                             )
                                     },
                                     'Windows':{
@@ -441,7 +442,8 @@ pipeline {
                                                 label: 'windows && docker',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
                                                 dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                dockerRunArgs: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
+                                                dockerRunArgs: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip',
+                                                retry: 2
 
                                             )
                                     },
