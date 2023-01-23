@@ -139,9 +139,9 @@ RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 #COPY --from=WHEEL_BUilDER_PY310 c:/wheels/ c:/wheels/
 #COPY --from=WHEEL_BUilDER_PY311 c:/wheels/ c:/wheels/
 
-ENV PIP_FIND_LINKS=c:\wheels
+#ENV PIP_FIND_LINKS=c:\wheels
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
-COPY requirements/ /tmp/requirements
-RUN python -m pip install pip --upgrade ; pip install -r /tmp/requirements/requirements_tox.txt "devpi-client<6.0"
+COPY requirements/ c:/requirements/requirements
+RUN python -m pip install pip --upgrade ; pip install -r c:/requirements/requirements/requirements_tox.txt -r c:/requirements/requirements/requirements-devpi.txt
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate

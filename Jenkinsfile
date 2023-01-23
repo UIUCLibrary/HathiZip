@@ -563,10 +563,11 @@ pipeline {
                                                     args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
-                                            retryTimes: 3,
+                                            retryTimes: 1,
                                             glob: 'dist/*.tar.gz',
                                             stash: 'dist',
                                             pythonVersion: pythonVersion
+
                                         )
                                     }
                                     linuxTests["Linux - Python ${pythonVersion}-${processorArchitecture}: wheel"] = {
@@ -581,7 +582,10 @@ pipeline {
                                             ],
                                             glob: 'dist/*.whl',
                                             stash: 'dist',
-                                            pythonVersion: pythonVersion
+                                            pythonVersion: pythonVersion,
+                                            testSetup: {
+                                                sh( script: 'printenv', label: 'checking env variables')
+                                            }
                                         )
                                     }
                                 }
@@ -697,12 +701,16 @@ pipeline {
                         }
                     }
                     post{
+                        always{
+                            sh 'ls -lR'
+                            archiveArtifacts artifacts: 'devpi/*'
+                        }
                         cleanup{
                             cleanWs(
                                 deleteDirs: true,
                                 patterns: [
                                     [pattern: 'dist/', type: 'INCLUDE'],
-                                    [pattern: 'HathiZip.dist-info/', type: 'INCLUDE'],
+                                    [pattern: '*.dist-info/', type: 'INCLUDE'],
                                     [pattern: 'build/', type: 'INCLUDE']
                                 ]
                             )
@@ -812,6 +820,9 @@ pipeline {
                                             selector: 'tar.gz'
                                         ],
                                         test:[
+                                            setup: {
+                                                powershell( script: 'dir env:', label: 'checking env variables')
+                                            },
                                             toxEnv: "py${pythonVersion}".replace('.',''),
                                         ]
                                     )
@@ -837,6 +848,9 @@ pipeline {
                                             selector: 'whl'
                                         ],
                                         test:[
+                                            setup: {
+                                                powershell( script: 'dir env:', label: 'checking env variables')
+                                            },
                                             toxEnv: "py${pythonVersion}".replace('.',''),
                                         ]
                                     )
@@ -850,21 +864,26 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                label: 'linux && docker && devpi-access'
+                                                label: 'linux && docker && devpi-access',
+                                                args: '-v pipcache_hathizip:/.cache/pip'
                                             ]
                                         ],
-                                        retryTimes: 3,
+                                        retries: 1,
                                         devpi: [
                                             index: DEVPI_CONFIG.stagingIndex,
                                             server: DEVPI_CONFIG.server,
                                             credentialsId: DEVPI_CONFIG.credentialsId,
                                         ],
+
                                         package:[
                                             name: props.Name,
                                             version: props.Version,
                                             selector: 'tar.gz'
                                         ],
                                         test:[
+                                            setup: {
+                                                sh( script: 'printenv', label: 'checking env variables')
+                                            },
                                             toxEnv: "py${pythonVersion}".replace('.',''),
                                         ]
                                     )
@@ -875,10 +894,11 @@ pipeline {
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
                                                 additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
-                                                label: 'linux && docker && devpi-access'
+                                                label: 'linux && docker && devpi-access',
+                                                args: '-v pipcache_hathizip:/.cache/pip'
                                             ]
                                         ],
-                                        retryTimes: 3,
+                                        retries: 1,
                                         devpi: [
                                             index: DEVPI_CONFIG.stagingIndex,
                                             server: DEVPI_CONFIG.server,
@@ -895,7 +915,11 @@ pipeline {
                                     )
                                 }
                             }
-                            parallel(macPackages + windowsPackages + linuxPackages)
+                            if(params.TEST_PACKAGES_ON_MAC == true){
+                                parallel(macPackages + windowsPackages + linuxPackages)
+                            } else {
+                                parallel(windowsPackages + linuxPackages)
+                            }
                         }
                     }
                 }

@@ -3,7 +3,6 @@ wheel
 sphinx
 pytest
 pytest-runner
-pytest-cov
 coverage[toml]
 tox
 lxml
