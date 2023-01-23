@@ -238,7 +238,7 @@ pipeline {
                                     filename DEFAULT_AGENT.filename
                                     label DEFAULT_AGENT.label
                                     additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
-                                    args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache'
+                                    args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache --mount source=pipcache_hathizip,target=/.cache/pip'
                                 }
                             }
                             stages{
@@ -431,7 +431,8 @@ pipeline {
                                                 envNamePrefix: 'Tox Linux',
                                                 label: 'linux && docker',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                dockerRunArgs: '-v pipcache_hathizip:/.cache/pip'
                                             )
                                     },
                                     'Windows':{
@@ -439,7 +440,9 @@ pipeline {
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                dockerRunArgs: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
+
                                             )
                                     },
                                     failFast: true

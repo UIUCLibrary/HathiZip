@@ -1,6 +1,7 @@
 # escape=`
 
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
+ARG PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip
 FROM ${FROM_IMAGE} as certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
@@ -129,6 +130,8 @@ FROM BASE_BUILDER
 COPY --from=certsgen c:/roots.sst roots.sst
 RUN certutil -addstore -f root roots.sst ; `
     del roots.sst
+ARG PIP_DOWNLOAD_CACHE
+RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 
 COPY --from=WHEEL_BUilDER_PY37 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUilDER_PY38 c:/wheels/ c:/wheels/
@@ -137,6 +140,7 @@ COPY --from=WHEEL_BUilDER_PY310 c:/wheels/ c:/wheels/
 COPY --from=WHEEL_BUilDER_PY311 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
+ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
 COPY requirements/ /tmp/requirements
 RUN python -m pip install pip --upgrade ; pip install -r /tmp/requirements/requirements_tox.txt "devpi-client<6.0"
 WORKDIR C:/src

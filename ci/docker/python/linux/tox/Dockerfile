@@ -1,4 +1,5 @@
 ARG PIP_FIND_LINKS=/wheels
+ARG PIP_DOWNLOAD_CACHE=/.cache/pip
 FROM ubuntu:20.04 as wheel_builder_base
 COPY ci/docker/python/linux/tox/apt-packages.txt /tmp/
 RUN apt update && \
@@ -96,6 +97,9 @@ FROM wheel_builder_base
 ARG PIP_FIND_LINKS
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
+ARG PIP_DOWNLOAD_CACHE
+RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
+    chmod -R 777 ${PIP_DOWNLOAD_CACHE}
 COPY --from=WHEEL_BUILDER_PY37 ${PIP_FIND_LINKS}/* ${PIP_FIND_LINKS}/
 COPY --from=WHEEL_BUILDER_PY38 ${PIP_FIND_LINKS}/* ${PIP_FIND_LINKS}/
 COPY --from=WHEEL_BUILDER_PY39 ${PIP_FIND_LINKS}/* ${PIP_FIND_LINKS}/
@@ -104,5 +108,6 @@ COPY --from=WHEEL_BUILDER_PY311 ${PIP_FIND_LINKS}/* ${PIP_FIND_LINKS}/
 ENV PIP_FIND_LINKS=${PIP_FIND_LINKS}
 COPY requirements/ /tmp/requirements
 RUN pip3 install -r /tmp/requirements/requirements_tox.txt "devpi-client<6.0"
+ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
 WORKDIR /src
 CMD tox --workdir /tmp/tox --recreate
