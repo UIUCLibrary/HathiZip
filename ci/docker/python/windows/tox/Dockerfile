@@ -133,11 +133,11 @@ RUN certutil -addstore -f root roots.sst ; `
 ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 
-COPY --from=WHEEL_BUilDER_PY37 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUilDER_PY38 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUilDER_PY39 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUilDER_PY310 c:/wheels/ c:/wheels/
-COPY --from=WHEEL_BUilDER_PY311 c:/wheels/ c:/wheels/
+#COPY --from=WHEEL_BUilDER_PY37 c:/wheels/ c:/wheels/
+#COPY --from=WHEEL_BUilDER_PY38 c:/wheels/ c:/wheels/
+#COPY --from=WHEEL_BUilDER_PY39 c:/wheels/ c:/wheels/
+#COPY --from=WHEEL_BUilDER_PY310 c:/wheels/ c:/wheels/
+#COPY --from=WHEEL_BUilDER_PY311 c:/wheels/ c:/wheels/
 
 ENV PIP_FIND_LINKS=c:\wheels
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
