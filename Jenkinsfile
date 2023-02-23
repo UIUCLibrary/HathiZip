@@ -431,7 +431,8 @@ pipeline {
                                                 envNamePrefix: 'Tox Linux',
                                                 label: 'linux && docker',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                dockerRunArgs: "--rm"
                                             )
                                     },
                                     'Windows':{
@@ -439,7 +440,8 @@ pipeline {
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL"
+                                                dockerArgs: "--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL",
+                                                dockerRunArgs: "--rm"
                                             )
                                     },
                                     failFast: true
