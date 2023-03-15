@@ -429,7 +429,7 @@ pipeline {
                                                 envNamePrefix: 'Tox Linux',
                                                 label: 'linux && docker',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
                                                 dockerRunArgs: '-v pipcache_hathizip:/.cache/pip',
                                                 retry: 2
                                             )
