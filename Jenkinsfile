@@ -36,12 +36,6 @@ def getPypiConfig() {
     }
 }
 
-def DEFAULT_AGENT = [
-    filename: 'ci/docker/python/linux/jenkins/Dockerfile',
-    label: 'linux && docker && x86',
-    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST'
-]
-
 
 SONARQUBE_CREDENTIAL_ID = 'sonartoken-hathizip'
 
@@ -154,9 +148,10 @@ pipeline {
                 stage('Build'){
                     agent {
                          dockerfile {
-                             filename DEFAULT_AGENT.filename
-                             label DEFAULT_AGENT.label
-                             additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                             filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                             label 'linux && docker && x86'
+                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11'
+                             args: '--mount source=pipcache_hathizip,target=/.cache/pip'
                          }
                     }
                     when{
@@ -235,9 +230,9 @@ pipeline {
                         stage('Code Quality'){
                             agent {
                                 dockerfile {
-                                    filename DEFAULT_AGENT.filename
-                                    label DEFAULT_AGENT.label
-                                    additionalBuildArgs DEFAULT_AGENT.additionalBuildArgs
+                                    filename 'ci/docker/python/linux/jenkins/Dockerfile'
+                                    label 'linux && docker && x86'
+                                    additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11'
                                     args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache --mount source=pipcache_hathizip,target=/.cache/pip'
                                 }
                             }
