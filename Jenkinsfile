@@ -131,7 +131,6 @@ pipeline {
         booleanParam(name: 'DEPLOY_DEVPI', defaultValue: false, description: "Deploy to devpi on https://devpi.library.illinois.edu/DS_Jenkins/${env.BRANCH_NAME}")
         booleanParam(name: 'DEPLOY_DEVPI_PRODUCTION', defaultValue: false, description: 'Deploy to https://devpi.library.illinois.edu/production/release')
         booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
-        booleanParam(name: 'DEPLOY_SCCM', defaultValue: false, description: 'Deploy to SCCM')
         booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
     }
     stages {
@@ -1046,44 +1045,6 @@ pipeline {
                                         [pattern: 'dist/', type: 'INCLUDE']
                                     ]
                             )
-                        }
-                    }
-                }
-                stage('Deploy to SCCM') {
-                    when{
-                        allOf{
-                            equals expected: true, actual: params.DEPLOY_SCCM
-                            branch 'master'
-                        }
-                        beforeAgent true
-                        beforeInput true
-                    }
-                    agent{
-                        label 'linux'
-                    }
-                    input {
-                        message 'Deploy to production?'
-                        parameters {
-                            string defaultValue: '', description: '', name: 'SCCM_UPLOAD_FOLDER', trim: true
-                            string defaultValue: '', description: '', name: 'SCCM_STAGING_FOLDER', trim: true
-                        }
-                    }
-                    options{
-                        skipDefaultCheckout true
-                    }
-                    steps {
-                        unstash 'msi'
-                        deployStash('msi', "${env.SCCM_STAGING_FOLDER}/${params.PROJECT_NAME}/")
-                        deployStash('msi', env.SCCM_UPLOAD_FOLDER)
-                    }
-                    post {
-                        success {
-                            script{
-                                def deployment_request = requestDeploy this, 'deployment.yml'
-                                echo deployment_request
-                                writeFile file: 'deployment_request.txt', text: deployment_request
-                                archiveArtifacts artifacts: 'deployment_request.txt'
-                            }
                         }
                     }
                 }
