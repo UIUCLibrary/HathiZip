@@ -16,9 +16,6 @@ include requirements.txt
 # Development requirements
 include requirements-dev.txt
 
-# Freeze requirements
-include requirements-freeze.txt
-
 recursive-include tests *.py
 
 # Documentation

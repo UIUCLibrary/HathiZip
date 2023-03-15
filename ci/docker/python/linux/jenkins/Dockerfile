@@ -1,8 +1,9 @@
-ARG PYTHON_VERSION=3.10
+ARG PYTHON_VERSION=3.11
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_FIND_LINKS=/wheels
 ARG SONAR_SCANNER_VERSION=4.7.0.2747
+ARG PIP_DOWNLOAD_CACHE=/.cache/pip
 FROM python:${PYTHON_VERSION} as base_image
 FROM base_image as wheel_builder
 ARG PIP_FIND_LINKS
@@ -42,6 +43,10 @@ RUN curl --create-dirs -sSLo /tmp/build-wrapper-linux-x86.zip https://sonarcloud
 FROM base_image
 RUN apt update -y && apt install -y libgl1-mesa-glx && \
     rm -rf /var/lib/apt/lists/*
+
+ARG PIP_DOWNLOAD_CACHE
+RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
+    chmod -R 777 ${PIP_DOWNLOAD_CACHE}
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ARG SONAR_SCANNER_VERSION
