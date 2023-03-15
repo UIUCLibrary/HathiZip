@@ -150,7 +150,7 @@ pipeline {
                              filename 'ci/docker/python/linux/jenkins/Dockerfile'
                              label 'linux && docker && x86'
                              additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11 --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip'
-                             args: '--mount source=pipcache_hathizip,target=/.cache/pip'
+                             args '--mount source=pipcache_hathizip,target=/.cache/pip'
                          }
                     }
                     when{

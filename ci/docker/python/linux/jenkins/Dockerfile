@@ -46,7 +46,7 @@ RUN apt update -y && apt install -y libgl1-mesa-glx && \
 
 ARG PIP_DOWNLOAD_CACHE
 RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
-    chmod -R 777 ${PIP_DOWNLOAD_CACHE} \
+    chmod -R 777 ${PIP_DOWNLOAD_CACHE}
 
 COPY --from=SONAR_BUILDER /opt/sonar /opt/sonar/
 ARG SONAR_SCANNER_VERSION
