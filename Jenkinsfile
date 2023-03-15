@@ -150,7 +150,7 @@ pipeline {
                          dockerfile {
                              filename 'ci/docker/python/linux/jenkins/Dockerfile'
                              label 'linux && docker && x86'
-                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11'
+                             additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11 --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip'
                              args: '--mount source=pipcache_hathizip,target=/.cache/pip'
                          }
                     }
@@ -232,7 +232,7 @@ pipeline {
                                 dockerfile {
                                     filename 'ci/docker/python/linux/jenkins/Dockerfile'
                                     label 'linux && docker && x86'
-                                    additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11'
+                                    additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11 --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip'
                                     args '--mount source=sonar-cache-hathizip,target=/opt/sonar/.sonar/cache --mount source=pipcache_hathizip,target=/.cache/pip'
                                 }
                             }
@@ -436,7 +436,7 @@ pipeline {
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                 dockerRunArgs: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip',
                                                 retry: 2
 
@@ -513,7 +513,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                     args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
@@ -529,7 +529,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                     args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
@@ -554,7 +554,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
                                                     args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
@@ -571,7 +571,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
                                                     args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
@@ -858,7 +858,7 @@ pipeline {
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
                                                 label: 'linux && docker && devpi-access',
                                                 args: '-v pipcache_hathizip:/.cache/pip'
                                             ]
@@ -888,7 +888,7 @@ pipeline {
                                         agent: [
                                             dockerfile: [
                                                 filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
                                                 label: 'linux && docker && devpi-access',
                                                 args: '-v pipcache_hathizip:/.cache/pip'
                                             ]
@@ -935,7 +935,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip'
                             filename 'ci/docker/python/linux/tox/Dockerfile'
                             label 'linux && docker && devpi-access'
                         }
