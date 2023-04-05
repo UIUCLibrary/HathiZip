@@ -75,6 +75,7 @@ def startup(){
             },
             'Enable Git Forensics': {
                 node(){
+                    checkout scm
                     mineRepository()
                 }
             },
