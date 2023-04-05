@@ -73,6 +73,11 @@ def startup(){
                     discoverGitReferenceBuild()
                 }
             },
+            'Enable Git Forensics': {
+                node(){
+                    mineRepository()
+                }
+            },
             'Getting Distribution Info': {
                 node('linux && docker') {
                     timeout(2){
