@@ -702,6 +702,9 @@ pipeline {
                             label 'linux && docker && devpi-access'
                         }
                     }
+                    options {
+                        retry(2)
+                    }
                     steps {
                         timeout(5){
                             unstash 'DOCS_ARCHIVE'
