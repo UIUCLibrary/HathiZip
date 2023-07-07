@@ -6,6 +6,7 @@ config-file-provider:latest
 docker-workflow:latest
 forensics-api:latest
 htmlpublisher:latest
+http-request:latest
 lockable-resources:latest
 sonar:latest
 warnings-ng:latest
