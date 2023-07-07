@@ -37,7 +37,7 @@ def getPypiConfig() {
 }
 
 
-SONARQUBE_CREDENTIAL_ID = 'sonartoken-hathizip'
+SONARQUBE_CREDENTIAL_ID = 'sonarcloud_token'
 
 defaultParameterValues = [
     USE_SONARQUBE: false
