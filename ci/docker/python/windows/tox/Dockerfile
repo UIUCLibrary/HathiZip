@@ -58,7 +58,8 @@ ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
-COPY requirements/ c:/requirements/requirements
-RUN python -m pip install pip --upgrade ; pip install -r c:/requirements/requirements/requirements_tox.txt -r c:/requirements/requirements/requirements-devpi.txt
+COPY requirements-ci.txt c:/python_requirments/
+COPY requirements/ c:/python_requirments/requirements
+RUN python -m pip install pip --upgrade ; pip install -r c:/python_requirments/requirements-ci.txt
 WORKDIR C:/src
 CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate
