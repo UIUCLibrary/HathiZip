@@ -1,0 +1,9 @@
+mypy
+wheel
+sphinx
+pytest
+pytest-runner
+coverage[toml]
+tox
+lxml
+flake8
