@@ -8,8 +8,10 @@ FROM python:${PYTHON_VERSION} as base_image
 FROM base_image as wheel_builder
 ARG PIP_FIND_LINKS
 RUN mkdir -p ${PIP_FIND_LINKS}
-ADD requirements-ci.txt /tmp/python_requirements/
-ADD requirements/ /tmp/python_requirements/requirements/
+COPY requirements-ci.txt /tmp/python_requirements/
+COPY requirements/ /tmp/python_requirements/requirements/
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
 RUN python -m pip install --upgrade pip &&  \
     pip install setuptools && \
     pip install wheel && \
@@ -17,7 +19,7 @@ RUN python -m pip install --upgrade pip &&  \
 
 FROM base_image as SONAR_BUILDER
 RUN apt-get update && \
-    apt-get install -y unzip
+    apt-get install --no-install-recommends -y unzip
 
 ARG SONAR_SCANNER_VERSION
 ARG SONAR_SCANNER_HOME=/opt/sonar/${SONAR_SCANNER_VERSION}-linux
@@ -40,7 +42,8 @@ RUN curl --create-dirs -sSLo /tmp/build-wrapper-linux-x86.zip https://sonarcloud
 #==============================================================================
 
 FROM base_image
-RUN apt update -y && apt install -y libgl1-mesa-glx && \
+RUN apt-get update -y &&  \
+    apt-get install --no-install-recommends -y libgl1-mesa-glx && \
     rm -rf /var/lib/apt/lists/*
 
 ARG PIP_DOWNLOAD_CACHE
@@ -56,8 +59,10 @@ RUN ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scan
     which sonar-scanner
 ENV SONAR_USER_HOME=/opt/sonar/.sonar
 ARG PIP_FIND_LINKS
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
 COPY --from=wheel_builder ${PIP_FIND_LINKS} ${PIP_FIND_LINKS}/
 COPY --from=wheel_builder /tmp/python_requirements/ /tmp/python_requirements/
-RUN pip install --no-index --find-links=${PIP_FIND_LINKS} -r /tmp/python_requirements/requirements-ci.txt
+RUN pip install --no-cache-dir --no-index --find-links=${PIP_FIND_LINKS} -r /tmp/python_requirements/requirements-ci.txt
 ENV PIP_FIND_LINKS=${PIP_FIND_LINKS}
 

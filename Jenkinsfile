@@ -36,12 +36,6 @@ def getPypiConfig() {
     }
 }
 
-
-SONARQUBE_CREDENTIAL_ID = 'sonarcloud_token'
-
-defaultParameterValues = [
-    USE_SONARQUBE: false
-]
 // ****************************************************************************
 
 node(){
@@ -50,23 +44,9 @@ node(){
 }
 
 def startup(){
-    def SONARQUBE_CREDENTIAL_ID = SONARQUBE_CREDENTIAL_ID
     parallel(
         [
             failFast: true,
-            'Checking sonarqube Settings': {
-                node(){
-                    try{
-                        withCredentials([string(credentialsId: SONARQUBE_CREDENTIAL_ID, variable: 'dddd')]) {
-                            echo 'Found credentials for sonarqube'
-                        }
-                        defaultParameterValues.USE_SONARQUBE = true
-                    } catch(e){
-                        echo "Setting defaultValue for USE_SONARQUBE to false. Reason: ${e}"
-                        defaultParameterValues.USE_SONARQUBE = false
-                    }
-                }
-            },
             'Loading Reference Build Information': {
                 node(){
                     checkout scm
@@ -128,7 +108,8 @@ pipeline {
     parameters {
         string(name: 'PROJECT_NAME', defaultValue: 'HathiTrust Zip for Submit', description: 'Name given to the project')
         booleanParam(name: 'RUN_CHECKS', defaultValue: true, description: 'Run checks on code')
-        booleanParam(name: 'USE_SONARQUBE', defaultValue: defaultParameterValues.USE_SONARQUBE, description: 'Send data test data to SonarQube')
+        booleanParam(name: 'USE_SONARQUBE', defaultValue: true, description: 'Send data test data to SonarQube')
+        credentials(name: 'SONARCLOUD_TOKEN', credentialType: 'org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl', defaultValue: 'sonarcloud_token', required: false)
         booleanParam(name: 'TEST_RUN_TOX', defaultValue: false, description: 'Run Tox Tests')
         booleanParam(name: 'BUILD_PACKAGES', defaultValue: false, description: 'Build Python packages')
         booleanParam(name: 'TEST_PACKAGES', defaultValue: false, description: 'Test packages')
@@ -365,7 +346,20 @@ pipeline {
                                         lock('hathizip-sonarscanner')
                                     }
                                     when{
-                                        equals expected: true, actual: params.USE_SONARQUBE
+                                        allOf{
+                                            equals expected: true, actual: params.USE_SONARQUBE
+                                            expression{
+                                                try{
+                                                    withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'dddd')]) {
+                                                        echo 'Found credentials for sonarqube'
+                                                    }
+                                                } catch(e){
+                                                    return false
+                                                }
+                                                return true
+                                            }
+                                        }
+                                        beforeAgent true
                                         beforeOptions true
                                     }
                                     steps{
@@ -378,7 +372,7 @@ pipeline {
                                                 ''
                                             )
                                             sonarqube.sonarcloudSubmit(
-                                                credentialsId: SONARQUBE_CREDENTIAL_ID,
+                                                credentialsId: params.SONARCLOUD_TOKEN,
                                                 projectVersion: props.Version
                                             )
                                             milestone label: 'sonarcloud'

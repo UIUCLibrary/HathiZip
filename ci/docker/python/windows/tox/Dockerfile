@@ -2,18 +2,19 @@
 
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
 ARG PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip
-FROM ${FROM_IMAGE} as certsgen
+FROM ${FROM_IMAGE} as base_image
+FROM base_image as certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
-FROM ${FROM_IMAGE} as BASE_BUILDER
+FROM base_image as BASE_BUILDER
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
 ARG CHOCOLATEY_SOURCE=https://chocolatey.org/api/v2
 ARG ChocolateyEnvironmentDebug=false
-ADD ci/docker/shared/chocolatey/install_choco.ps1 choco/install_choco.ps1
+COPY ci/docker/shared/chocolatey/install_choco.ps1 c:/choco/install_choco.ps1
 RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
-    ./choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_SOURCE ; `
+    c:/choco/install_choco.ps1 -packageRepo $env:CHOCOLATEY_SOURCE ; `
     if( -not ([string]::IsNullOrEmpty($Env:CHOCOLATEY_SOURCE ))) `
     { `
         Write-Host "Adding $env:CHOCOLATEY_SOURCE to chocolatey sources" ; `
@@ -25,9 +26,9 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; `
     Remove-Item -Force -Recurse ${Env:TEMP}\*
 
 
-ADD ci/docker/shared/chocolatey/packages.config choco/packages.config
+COPY ci/docker/shared/chocolatey/packages.config c:/choco/packages.config
 RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
-    C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/packages.config ;`
+    C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose c:/choco/packages.config ;`
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     refreshenv ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
@@ -37,8 +38,8 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe sources ; `
     }; `
     Write-Host "Finished install packages with Chocolatey"
 
-ADD ci/docker/shared/chocolatey/python.xml choco/python.config
-RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose choco/python.config ;`
+COPY ci/docker/shared/chocolatey/python.xml c:/choco/python.config
+RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no-progress --verbose c:/choco/python.config ;`
     Remove-Item C:\Users\ContainerAdministrator\AppData\Local\Temp\chocolatey -Recurse ; `
     refreshenv ; `
     Remove-Item -Force -Recurse ${Env:TEMP}\* ; `
@@ -51,15 +52,19 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no
 
 # ==============================================================================
 FROM BASE_BUILDER
-COPY --from=certsgen c:/roots.sst roots.sst
-RUN certutil -addstore -f root roots.sst ; `
+COPY --from=certsgen c:/roots.sst c:/roots.sst
+RUN certutil -addstore -f root c:/roots.sst ; `
     del roots.sst
+
+ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
+ARG PIP_EXTRA_INDEX_URL
+ARG PIP_INDEX_URL
+COPY requirements-ci.txt c:/python_requirments/
+COPY requirements/ c:/python_requirments/requirements
+RUN python -m pip install --no-cache-dir pip --upgrade ; pip install --no-cache-dir -r c:/python_requirments/requirements-ci.txt
+
 ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 
-ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
-COPY requirements-ci.txt c:/python_requirments/
-COPY requirements/ c:/python_requirments/requirements
-RUN python -m pip install pip --upgrade ; pip install -r c:/python_requirments/requirements-ci.txt
 WORKDIR C:/src
-CMD tox --workdir ${Env:TEMP}\tox\ -vv  --recreate
+CMD ["tox", "--workdir", "${Env:TEMP}\tox\\", "-vv",  "--recreate"]
