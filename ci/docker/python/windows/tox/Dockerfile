@@ -56,7 +56,6 @@ COPY --from=certsgen c:/roots.sst c:/roots.sst
 RUN certutil -addstore -f root c:/roots.sst ; `
     del roots.sst
 
-ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 COPY requirements-ci.txt c:/python_requirments/
@@ -65,6 +64,7 @@ RUN python -m pip install --no-cache-dir pip --upgrade ; pip install --no-cache-
 
 ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
+ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
 
 WORKDIR C:/src
-CMD ["tox", "--workdir", "${Env:TEMP}\tox\\", "-vv",  "--recreate"]
+CMD ["tox", "--workdir", "${Env:TEMP}\\tox\\", "-vv",  "--recreate"]
