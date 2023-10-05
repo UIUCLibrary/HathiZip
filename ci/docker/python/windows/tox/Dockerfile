@@ -2,11 +2,11 @@
 
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
 ARG PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip
-FROM ${FROM_IMAGE} as base_image
-FROM base_image as certsgen
+FROM ${FROM_IMAGE} AS base_image
+FROM base_image AS certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
-FROM base_image as BASE_BUILDER
+FROM base_image AS BASE_BUILDER
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';"]
 
@@ -48,6 +48,7 @@ RUN C:\ProgramData\chocolatey\bin\choco.exe install -y --stoponfirstfailure --no
     py -3.9 --version ; `
     py -3.10 --version ; `
     py -3.11 --version ; `
+    py -3.12 --version ; `
     Write-Host "Installing Python with Chocolatey - Done"
 
 # ==============================================================================
