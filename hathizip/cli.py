@@ -4,9 +4,11 @@ import argparse
 import os
 import shutil
 import sys
+from typing import Optional, List
 
 from hathizip import process, configure_logging
 from hathizip.utils import has_subdirs
+
 
 try:
     from importlib import metadata
@@ -14,7 +16,7 @@ except ImportError:
     import importlib_metadata as metadata  # type: ignore
 
 
-def destination_path(path):
+def destination_path(path: str) -> str:
     """Validate the entry point for the cli args.
 
     Args:
@@ -25,10 +27,10 @@ def destination_path(path):
 
     """
     if not os.path.exists(path):
-        raise ValueError("{} is an invalid path".format(path))
+        raise ValueError(f"{path} is an invalid path")
 
     if not os.path.isdir(path):
-        raise ValueError("{} is not a path".format(path))
+        raise ValueError(f"{path} is not a path")
 
     return os.path.abspath(path)
 
@@ -85,7 +87,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv=None):
+def main(argv: Optional[List[str]] = None) -> None:
     """Run main entry point for the program."""
     argv = argv or sys.argv[1:]
 
@@ -95,10 +97,10 @@ def main(argv=None):
     if args.dest:
         # If an alternative destination path for the zip files is asked for,
         # use that.
-        destination_path = args.dest
+        _destination_path = args.dest
     else:
         # Otherwise just put the newly created zip files in the same path
-        destination_path = args.path
+        _destination_path = args.path
 
     logger = configure_logging.configure_logger(
         debug_mode=args.debug,
@@ -106,12 +108,12 @@ def main(argv=None):
     )
 
     if not has_subdirs(args.path):
-        logger.error("No directories found at {}".format(args.path))
+        logger.error("No directories found at %s", args.path)
     for folder in filter(lambda x: x.is_dir(), os.scandir(args.path)):
-        process.compress_folder(folder.path, dst=destination_path)
+        process.compress_folder(folder.path, dst=_destination_path)
         if args.remove:
             shutil.rmtree(folder.path)
-            logger.info("Removing {}.".format(folder.path))
+            logger.info("Removing %s.", folder.path)
 
 
 if __name__ == '__main__':

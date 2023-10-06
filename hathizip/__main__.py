@@ -5,7 +5,7 @@ import sys
 from hathizip import cli
 
 
-def main():
+def main() -> None:
     """Check if pytest arg is run else run main entry point."""
     if len(sys.argv) > 1 and sys.argv[1] == "--pytest":
         # pylint: disable=import-outside-toplevel
