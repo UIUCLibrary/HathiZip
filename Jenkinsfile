@@ -181,7 +181,7 @@ pipeline {
                         }
                         stage('Building Sphinx Documentation'){
                             steps {
-                                catchError(buildResult: 'SUCCESS', message: 'Error building documentation', stageResult: 'UNSTABLE') {
+                                catchError(buildResult: 'UNSTABLE', message: 'Building documentation produced an error or a warning', stageResult: 'UNSTABLE') {
                                     sh(
                                         label: 'Building docs',
                                         script: '''mkdir -p logs
