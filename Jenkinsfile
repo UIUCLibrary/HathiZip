@@ -607,59 +607,63 @@ pipeline {
                                     architectures.add('x86_64')
                                 }
                                 architectures.each{ processorArchitecture ->
-                                    macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
-                                        packages.testPkg(
-                                                agent: [
-                                                    label: "mac && python${pythonVersion} && ${processorArchitecture}",
-                                                ],
-                                                glob: 'dist/*.tar.gz,dist/*.zip',
-                                                stash: 'dist',
-                                                pythonVersion: pythonVersion,
-                                                toxExec: 'venv/bin/tox',
-                                                testSetup: {
-                                                    checkout scm
-                                                    unstash 'dist'
-                                                    sh(
-                                                        label:'Install Tox',
-                                                        script: '''python3 -m venv venv
-                                                                  . ./venv/bin/activate
-                                                                  python -m pip install --upgrade pip
-                                                                  pip install -r requirements/requirements_tox.txt
-                                                                '''
-                                                    )
-                                                },
-                                                testTeardown: {
-                                                    sh 'rm -r venv/'
-                                                }
+                                    if (nodesByLabel("mac && ${processorArchitecture} && python${pythonVersion}").size() > 0){
+                                        macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
+                                            packages.testPkg(
+                                                    agent: [
+                                                        label: "mac && python${pythonVersion} && ${processorArchitecture}",
+                                                    ],
+                                                    glob: 'dist/*.tar.gz,dist/*.zip',
+                                                    stash: 'dist',
+                                                    pythonVersion: pythonVersion,
+                                                    toxExec: 'venv/bin/tox',
+                                                    testSetup: {
+                                                        checkout scm
+                                                        unstash 'dist'
+                                                        sh(
+                                                            label:'Install Tox',
+                                                            script: '''python3 -m venv venv
+                                                                      . ./venv/bin/activate
+                                                                      python -m pip install --upgrade pip
+                                                                      pip install -r requirements/requirements_tox.txt
+                                                                    '''
+                                                        )
+                                                    },
+                                                    testTeardown: {
+                                                        sh 'rm -r venv/'
+                                                    }
 
-                                            )
-                                    }
-                                    macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
-                                        packages.testPkg(
-                                                agent: [
-                                                    label: "mac && python${pythonVersion} && ${processorArchitecture}",
-                                                ],
-                                                glob: 'dist/*.whl',
-                                                stash: 'dist',
-                                                pythonVersion: pythonVersion,
-                                                toxExec: 'venv/bin/tox',
-                                                testSetup: {
-                                                    checkout scm
-                                                    unstash 'dist'
-                                                    sh(
-                                                        label:'Install Tox',
-                                                        script: '''python3 -m venv venv
-                                                                   . ./venv/bin/activate
-                                                                   python -m pip install --upgrade pip
-                                                                   pip install -r requirements/requirements_tox.txt
-                                                                '''
-                                                    )
-                                                },
-                                                testTeardown: {
-                                                    sh 'rm -r venv/'
-                                                }
+                                                )
+                                        }
+                                        macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
+                                            packages.testPkg(
+                                                    agent: [
+                                                        label: "mac && python${pythonVersion} && ${processorArchitecture}",
+                                                    ],
+                                                    glob: 'dist/*.whl',
+                                                    stash: 'dist',
+                                                    pythonVersion: pythonVersion,
+                                                    toxExec: 'venv/bin/tox',
+                                                    testSetup: {
+                                                        checkout scm
+                                                        unstash 'dist'
+                                                        sh(
+                                                            label:'Install Tox',
+                                                            script: '''python3 -m venv venv
+                                                                       . ./venv/bin/activate
+                                                                       python -m pip install --upgrade pip
+                                                                       pip install -r requirements/requirements_tox.txt
+                                                                    '''
+                                                        )
+                                                    },
+                                                    testTeardown: {
+                                                        sh 'rm -r venv/'
+                                                    }
 
-                                            )
+                                                )
+                                        }
+                                    } else {
+                                        echo "Skipping testing on ${processorArchitecture} Mac with Python ${pythonVersion} due to no available agents."
                                     }
                                 }
                             }
@@ -744,79 +748,83 @@ pipeline {
                                     architectures.add('x86_64')
                                 }
                                 architectures.each{ processorArchitecture ->
-                                    macPackages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
-                                        withEnv(['PATH+EXTRA=./venv/bin']) {
-                                            devpi.testDevpiPackage(
-                                                agent: [
-                                                    label: "mac && python${pythonVersion} && devpi-access && ${processorArchitecture}"
-                                                ],
-                                                devpi: [
-                                                    index: DEVPI_CONFIG.stagingIndex,
-                                                    server: DEVPI_CONFIG.server,
-                                                    credentialsId: DEVPI_CONFIG.credentialsId,
-                                                    devpiExec: 'venv/bin/devpi'
-                                                ],
-                                                package:[
-                                                    name: props.Name,
-                                                    version: props.Version,
-                                                    selector: 'whl'
-                                                ],
-                                                test:[
-                                                    setup: {
-                                                        checkout scm
-                                                        sh(
-                                                            label:'Installing Devpi client',
-                                                            script: '''python3 -m venv venv
-                                                                       . venv/bin/activate
-                                                                       python -m pip install pip --upgrade
-                                                                       python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                                                    '''
-                                                        )
-                                                    },
-                                                    toxEnv: "py${pythonVersion}".replace('.',''),
-                                                    teardown: {
-                                                        sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                                                    }
-                                                ]
-                                            )
+                                    if (nodesByLabel("mac && ${processorArchitecture} && python${pythonVersion}").size() > 0){
+                                        macPackages["Test Python ${pythonVersion}: wheel Mac ${processorArchitecture}"] = {
+                                            withEnv(['PATH+EXTRA=./venv/bin']) {
+                                                devpi.testDevpiPackage(
+                                                    agent: [
+                                                        label: "mac && python${pythonVersion} && devpi-access && ${processorArchitecture}"
+                                                    ],
+                                                    devpi: [
+                                                        index: DEVPI_CONFIG.stagingIndex,
+                                                        server: DEVPI_CONFIG.server,
+                                                        credentialsId: DEVPI_CONFIG.credentialsId,
+                                                        devpiExec: 'venv/bin/devpi'
+                                                    ],
+                                                    package:[
+                                                        name: props.Name,
+                                                        version: props.Version,
+                                                        selector: 'whl'
+                                                    ],
+                                                    test:[
+                                                        setup: {
+                                                            checkout scm
+                                                            sh(
+                                                                label:'Installing Devpi client',
+                                                                script: '''python3 -m venv venv
+                                                                           . venv/bin/activate
+                                                                           python -m pip install pip --upgrade
+                                                                           python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                                        '''
+                                                            )
+                                                        },
+                                                        toxEnv: "py${pythonVersion}".replace('.',''),
+                                                        teardown: {
+                                                            sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                                        }
+                                                    ]
+                                                )
+                                            }
                                         }
-                                    }
-                                    macPackages["Test Python ${pythonVersion}: sdist Mac ${processorArchitecture}"]= {
-                                        withEnv(['PATH+EXTRA=./venv/bin']) {
-                                            devpi.testDevpiPackage(
-                                                agent: [
-                                                    label: "mac && python${pythonVersion} && devpi-access && ${processorArchitecture}"
-                                                ],
-                                                devpi: [
-                                                    index: DEVPI_CONFIG.stagingIndex,
-                                                    server: DEVPI_CONFIG.server,
-                                                    credentialsId: DEVPI_CONFIG.credentialsId,
-                                                    devpiExec: 'venv/bin/devpi'
-                                                ],
-                                                package:[
-                                                    name: props.Name,
-                                                    version: props.Version,
-                                                    selector: 'tar.gz'
-                                                ],
-                                                test:[
-                                                    setup: {
-                                                        checkout scm
-                                                        sh(
-                                                            label:'Installing Devpi client',
-                                                            script: '''python3 -m venv venv
-                                                                       . venv/bin/activate
-                                                                       python -m pip install pip --upgrade
-                                                                       python -m pip install devpi_client -r requirements/requirements_tox.txt
-                                                                    '''
-                                                        )
-                                                    },
-                                                    toxEnv: "py${pythonVersion}".replace('.',''),
-                                                    teardown: {
-                                                        sh( label: 'Remove Devpi client', script: 'rm -r venv')
-                                                    }
-                                                ]
-                                            )
+                                        macPackages["Test Python ${pythonVersion}: sdist Mac ${processorArchitecture}"]= {
+                                            withEnv(['PATH+EXTRA=./venv/bin']) {
+                                                devpi.testDevpiPackage(
+                                                    agent: [
+                                                        label: "mac && python${pythonVersion} && devpi-access && ${processorArchitecture}"
+                                                    ],
+                                                    devpi: [
+                                                        index: DEVPI_CONFIG.stagingIndex,
+                                                        server: DEVPI_CONFIG.server,
+                                                        credentialsId: DEVPI_CONFIG.credentialsId,
+                                                        devpiExec: 'venv/bin/devpi'
+                                                    ],
+                                                    package:[
+                                                        name: props.Name,
+                                                        version: props.Version,
+                                                        selector: 'tar.gz'
+                                                    ],
+                                                    test:[
+                                                        setup: {
+                                                            checkout scm
+                                                            sh(
+                                                                label:'Installing Devpi client',
+                                                                script: '''python3 -m venv venv
+                                                                           . venv/bin/activate
+                                                                           python -m pip install pip --upgrade
+                                                                           python -m pip install devpi_client -r requirements/requirements_tox.txt
+                                                                        '''
+                                                            )
+                                                        },
+                                                        toxEnv: "py${pythonVersion}".replace('.',''),
+                                                        teardown: {
+                                                            sh( label: 'Remove Devpi client', script: 'rm -r venv')
+                                                        }
+                                                    ]
+                                                )
+                                            }
                                         }
+                                    } else {
+                                        echo "Skipping testing on ${processorArchitecture} Mac with Python ${pythonVersion} due to no available agents."
                                     }
                                 }
                             }
