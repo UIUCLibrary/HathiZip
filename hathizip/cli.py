@@ -97,10 +97,10 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.dest:
         # If an alternative destination path for the zip files is asked for,
         # use that.
-        destination_path = args.dest
+        _destination_path = args.dest
     else:
         # Otherwise just put the newly created zip files in the same path
-        destination_path = args.path
+        _destination_path = args.path
 
     logger = configure_logging.configure_logger(
         debug_mode=args.debug,
@@ -110,7 +110,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     if not has_subdirs(args.path):
         logger.error("No directories found at %s", args.path)
     for folder in filter(lambda x: x.is_dir(), os.scandir(args.path)):
-        process.compress_folder(folder.path, dst=destination_path)
+        process.compress_folder(folder.path, dst=_destination_path)
         if args.remove:
             shutil.rmtree(folder.path)
             logger.info("Removing %s.", folder.path)
