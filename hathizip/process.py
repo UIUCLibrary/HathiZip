@@ -46,7 +46,7 @@ def compress_folder(path: str, dst: str) -> None:
     logger.debug("Taking care of %s", path)
 
     last_path = os.path.normcase(path).split(os.path.sep)[-1]
-    zipname = "{}.zip".format(last_path)
+    zipname = f"{last_path}.zip"
 
     with tempfile.TemporaryDirectory() as temp_dir:
         tmp_zip = os.path.join(temp_dir, zipname)
@@ -80,7 +80,7 @@ def compress_folder_inplace(path: str, dst: str) -> None:
     logger.debug("Taking care of %s", path)
 
     last_path = os.path.normcase(path).split(os.path.sep)[-1]
-    zipname = "{}.zip".format(last_path)
+    zipname = f"{last_path}.zip"
 
     temp_zipname = os.path.join(dst, "processing.dat")
 

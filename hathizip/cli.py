@@ -27,10 +27,10 @@ def destination_path(path: str) -> str:
 
     """
     if not os.path.exists(path):
-        raise ValueError("{} is an invalid path".format(path))
+        raise ValueError(f"{path} is an invalid path")
 
     if not os.path.isdir(path):
-        raise ValueError("{} is not a path".format(path))
+        raise ValueError(f"{path} is not a path")
 
     return os.path.abspath(path)
 
