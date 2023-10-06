@@ -4,9 +4,11 @@ import argparse
 import os
 import shutil
 import sys
+from typing import Optional, List
 
 from hathizip import process, configure_logging
 from hathizip.utils import has_subdirs
+
 
 try:
     from importlib import metadata
@@ -14,7 +16,7 @@ except ImportError:
     import importlib_metadata as metadata  # type: ignore
 
 
-def destination_path(path):
+def destination_path(path: str) -> str:
     """Validate the entry point for the cli args.
 
     Args:
@@ -85,7 +87,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv=None):
+def main(argv: Optional[List[str]] = None) -> None:
     """Run main entry point for the program."""
     argv = argv or sys.argv[1:]
 

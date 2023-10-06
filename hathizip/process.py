@@ -12,7 +12,7 @@ PackageFile = namedtuple("PackageFile", ("absolute_path", "archive_path"))
 
 
 # TODO: create get_files testing
-def get_files(path) -> typing.Iterator[PackageFile]:
+def get_files(path: str) -> typing.Iterator[PackageFile]:
     """Find files relative to a given path.
 
     Args:
@@ -33,7 +33,7 @@ def get_files(path) -> typing.Iterator[PackageFile]:
             )
 
 
-def compress_folder(path, dst):
+def compress_folder(path: str, dst: str) -> None:
     """Compress the contents of a path.
 
     Args:
@@ -66,7 +66,7 @@ def compress_folder(path, dst):
         logger.info("Generated {}".format(final_zip))
 
 
-def compress_folder_inplace(path, dst):
+def compress_folder_inplace(path: str, dst: str) -> None:
     """Compress the contents of a path without using a temp directory.
 
     Args:

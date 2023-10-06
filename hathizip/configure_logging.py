@@ -2,9 +2,13 @@
 
 import logging
 import sys
+from typing import Optional
 
 
-def configure_logger(debug_mode=False, log_file=None) -> logging.Logger:
+def configure_logger(
+        debug_mode: bool = False,
+        log_file: Optional[str] = None
+) -> logging.Logger:
     """Configure logger.
 
     Useful for passing logging information
