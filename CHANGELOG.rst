@@ -3,8 +3,8 @@
 Release History
 ---------------
 
-dev
+0.1.11
 +++
 
-* Added Pipfile and Pipfile.lock
+* Modernized code
 * Added compress_folder_inplace()
