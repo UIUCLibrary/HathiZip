@@ -21,7 +21,12 @@ import os
 import sys
 
 import re
-from setuptools.config import read_configuration
+
+try:
+    from setuptools.config.setupcfg import read_configuration
+except ModuleNotFoundError:
+    from setuptools.config import read_configuration
+
 sys.path.insert(0, os.path.abspath('../..'))
 
 # metadata = dict()
