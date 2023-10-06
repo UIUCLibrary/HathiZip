@@ -11,7 +11,6 @@ from collections import namedtuple
 PackageFile = namedtuple("PackageFile", ("absolute_path", "archive_path"))
 
 
-# TODO: create get_files testing
 def get_files(path: str) -> typing.Iterator[PackageFile]:
     """Find files relative to a given path.
 
