@@ -108,12 +108,12 @@ def main(argv: Optional[List[str]] = None) -> None:
     )
 
     if not has_subdirs(args.path):
-        logger.error("No directories found at {}".format(args.path))
+        logger.error("No directories found at %s", args.path)
     for folder in filter(lambda x: x.is_dir(), os.scandir(args.path)):
         process.compress_folder(folder.path, dst=destination_path)
         if args.remove:
             shutil.rmtree(folder.path)
-            logger.info("Removing {}.".format(folder.path))
+            logger.info("Removing %s.", folder.path)
 
 
 if __name__ == '__main__':

@@ -43,27 +43,28 @@ def compress_folder(path: str, dst: str) -> None:
 
     """
     logger = logging.getLogger(__name__)
-    logger.debug("Taking care of {}".format(path))
+    logger.debug("Taking care of %s", path)
 
     last_path = os.path.normcase(path).split(os.path.sep)[-1]
     zipname = "{}.zip".format(last_path)
 
     with tempfile.TemporaryDirectory() as temp_dir:
         tmp_zip = os.path.join(temp_dir, zipname)
-        logger.debug("Creating temp zip file {}".format(tmp_zip))
+        logger.debug("Creating temp zip file %s", tmp_zip)
         with zipfile.ZipFile(tmp_zip, "w") as zipped_package:
 
             for file, archive_name in get_files(path):
                 logger.debug(
-                    "Writing {} as {} to {}".format(
-                        file, archive_name, tmp_zip
-                    )
+                    "Writing %s as %s to %s",
+                    file,
+                    archive_name,
+                    tmp_zip
                 )
                 zipped_package.write(file, arcname=archive_name)
-                logger.info("Zipped {}".format(file))
+                logger.info("Zipped %s", file)
         final_zip = os.path.join(dst, zipname)
         shutil.move(tmp_zip, final_zip)
-        logger.info("Generated {}".format(final_zip))
+        logger.info("Generated %s", final_zip)
 
 
 def compress_folder_inplace(path: str, dst: str) -> None:
@@ -76,7 +77,7 @@ def compress_folder_inplace(path: str, dst: str) -> None:
 
     """
     logger = logging.getLogger(__name__)
-    logger.debug("Taking care of {}".format(path))
+    logger.debug("Taking care of %s", path)
 
     last_path = os.path.normcase(path).split(os.path.sep)[-1]
     zipname = "{}.zip".format(last_path)
@@ -90,13 +91,17 @@ def compress_folder_inplace(path: str, dst: str) -> None:
 
         for file, archive_name in get_files(path):
 
-            logger.debug("Writing {} as {} to {}".format(
-                file, archive_name, temp_zipname))
+            logger.debug(
+                "Writing %s as %s to %s",
+                file,
+                archive_name,
+                temp_zipname
+            )
             zipped_package.write(file, arcname=archive_name)
 
-            logger.info("Zipped {}".format(file))
+            logger.info("Zipped %s", file)
 
-    logger.debug("Renaming {} to {}".format(temp_zipname, final_zip))
+    logger.debug("Renaming %s to %s", temp_zipname, final_zip)
 
     shutil.move(temp_zipname, final_zip)
-    logger.info("Generated {}".format(final_zip))
+    logger.info("Generated %s", final_zip)
