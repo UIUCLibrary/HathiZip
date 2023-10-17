@@ -69,6 +69,6 @@ tomlkit==0.12.1
 tox==3.28.0
 twine==4.0.2
 typing_extensions==4.8.0
-urllib3==2.0.6
+urllib3==2.0.7
 virtualenv==20.24.5
 zipp==3.17.0
