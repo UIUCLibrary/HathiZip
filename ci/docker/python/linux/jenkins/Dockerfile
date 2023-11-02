@@ -2,10 +2,11 @@ ARG PYTHON_VERSION=3.11
 ARG PIP_EXTRA_INDEX_URL
 ARG PIP_TRUSTED_HOST
 ARG PIP_FIND_LINKS=/wheels
-ARG SONAR_SCANNER_VERSION=4.7.0.2747
+ARG SONAR_SCANNER_VERSION=5.0.1.3006
 ARG PIP_DOWNLOAD_CACHE=/.cache/pip
-FROM python:${PYTHON_VERSION} as base_image
-FROM base_image as wheel_builder
+
+FROM python:${PYTHON_VERSION} AS base_image
+FROM base_image AS wheel_builder
 ARG PIP_FIND_LINKS
 RUN mkdir -p ${PIP_FIND_LINKS}
 COPY requirements-ci.txt /tmp/python_requirements/
@@ -17,7 +18,7 @@ RUN python -m pip install --upgrade pip &&  \
     pip install wheel && \
     pip wheel --wheel-dir=${PIP_FIND_LINKS} -v -r /tmp/python_requirements/requirements-ci.txt
 
-FROM base_image as SONAR_BUILDER
+FROM base_image AS SONAR_BUILDER
 RUN apt-get update && \
     apt-get install --no-install-recommends -y unzip
 
@@ -29,9 +30,9 @@ RUN curl --create-dirs -sSLo /tmp/sonar-scanner.zip \
   https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SONAR_SCANNER_VERSION}-linux.zip && \
     unzip -o /tmp/sonar-scanner.zip -d /opt/sonar/ && \
     rm /tmp/sonar-scanner.zip && \
-    mkdir -p $SONAR_USER_HOME/cache && \
+    mkdir -p ${SONAR_USER_HOME}/cache && \
     chmod -R 777 "${SONAR_USER_HOME}" &&\
-    ln -s /opt/sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
+    ln -s /opt/sonar/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner /usr/local/bin/sonar-scanner && \
     which sonar-scanner
 
 
