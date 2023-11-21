@@ -1,9 +1,12 @@
+coverage[toml]
+flake8
+lxml
 mypy
-wheel
-sphinx
+paramiko
+pylint
 pytest
 pytest-runner
-coverage[toml]
+sphinx
 tox
-lxml
-flake8
+twine
+wheel
