@@ -148,6 +148,9 @@ pipeline {
                              args '--mount source=pipcache_hathizip,target=/.cache/pip'
                          }
                     }
+                    options {
+                        retry(conditions: [agent()], count: 3)
+                    }
                     when{
                         anyOf{
                             equals expected: true, actual: params.RUN_CHECKS
