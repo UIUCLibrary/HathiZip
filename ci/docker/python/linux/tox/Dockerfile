@@ -18,9 +18,9 @@ RUN mkdir -p ${PIP_DOWNLOAD_CACHE} && \
     chmod -R 777 ${PIP_DOWNLOAD_CACHE}
 
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
-COPY requirements-ci.txt /tmp/python_requirements/
+COPY requirements-dev.txt /tmp/python_requirements/
 COPY requirements/ /tmp/python_requirements/requirements/
-RUN python3 -m pip install --no-cache-dir pip --upgrade && pip3 install --no-cache-dir -r /tmp/python_requirements/requirements-ci.txt
+RUN python3 -m pip install --no-cache-dir pip --upgrade && pip3 install --no-cache-dir -r /tmp/python_requirements/requirements-dev.txt
 
 ARG PIPX_HOME
 ENV PIPX_HOME=${PIPX_HOME}
