@@ -5,7 +5,6 @@ mypy
 paramiko
 pylint
 pytest
-pytest-runner
 sphinx
 tox
 twine
