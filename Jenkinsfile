@@ -418,6 +418,9 @@ pipeline {
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
+                    options {
+                        lock(env.JOB_URL)
+                    }
                     steps {
                         script{
                             def tox = fileLoader.fromGit(
