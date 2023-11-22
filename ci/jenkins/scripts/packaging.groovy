@@ -43,12 +43,28 @@ def getAgent(args){
                 ws{
                     checkout scm
                     def dockerImage
-                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
+                    def dockerImageName = "${currentBuild.fullProjectName}_${getToxEnv(args)}_${UUID.randomUUID().toString()}".replaceAll("-", "_").replaceAll('/', "_").replaceAll(' ', "").toLowerCase()
                     lock("docker build-${env.NODE_NAME}"){
                         dockerImage = docker.build(dockerImageName, "-f ${args.agent.dockerfile.filename} ${args.agent.dockerfile.additionalBuildArgs} .")
                     }
-                    dockerImage.inside(dockerArgs){
-                        inner()
+                    try{
+                        dockerImage.inside(dockerArgs){
+                            inner()
+                        }
+                    } finally{
+                        if(isUnix()){
+                            sh(
+                                label: "Untagging Docker Image used to run tox",
+                                script: "docker image rm --no-prune ${dockerImage.imageName()}",
+                                returnStatus: true
+                            )
+                        } else {
+                            powershell(
+                                label: "Untagging Docker Image used to run tox",
+                                script: "docker image rm --no-prune ${dockerImage.imageName()}",
+                                returnStatus: true
+                            )
+                        }
                     }
                 }
             }

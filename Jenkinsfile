@@ -474,6 +474,9 @@ pipeline {
                 }
                 beforeAgent true
             }
+            options {
+                lock(env.JOB_URL)
+            }
             stages{
                 stage('Source and Wheel formats'){
                     agent {
@@ -523,37 +526,37 @@ pipeline {
                             if(params.INCLUDE_WINDOWS_X86_64 == true){
                                 SUPPORTED_WINDOWS_VERSIONS.each{ pythonVersion ->
                                     windowsTests["Windows - Python ${pythonVersion}: sdist"] = {
-                                            packages.testPkg(
-                                                agent: [
-                                                    dockerfile: [
-                                                        label: 'windows && docker',
-                                                        filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
-                                                        args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
-                                                    ]
-                                                ],
-                                                retryTimes: 3,
-                                                glob: 'dist/*.tar.gz,dist/*.zip',
-                                                stash: 'dist',
-                                                pythonVersion: pythonVersion
-                                            )
-                                        }
+                                        packages.testPkg(
+                                            agent: [
+                                                dockerfile: [
+                                                    label: 'windows && docker',
+                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
+                                                ]
+                                            ],
+                                            retryTimes: 3,
+                                            glob: 'dist/*.tar.gz,dist/*.zip',
+                                            stash: 'dist',
+                                            pythonVersion: pythonVersion
+                                        )
+                                    }
                                     windowsTests["Windows - Python ${pythonVersion}: wheel"] = {
-                                            packages.testPkg(
-                                                agent: [
-                                                    dockerfile: [
-                                                        label: 'windows && docker',
-                                                        filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                        additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
-                                                        args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
-                                                    ]
-                                                ],
-                                                retryTimes: 3,
-                                                glob: 'dist/*.whl',
-                                                stash: 'dist',
-                                                pythonVersion: pythonVersion
-                                            )
-                                        }
+                                        packages.testPkg(
+                                            agent: [
+                                                dockerfile: [
+                                                    label: 'windows && docker',
+                                                    filename: 'ci/docker/python/windows/tox/Dockerfile',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
+                                                ]
+                                            ],
+                                            retryTimes: 3,
+                                            glob: 'dist/*.whl',
+                                            stash: 'dist',
+                                            pythonVersion: pythonVersion
+                                        )
+                                    }
                                 }
                             }
 
