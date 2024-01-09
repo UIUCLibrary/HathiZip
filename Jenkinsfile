@@ -419,7 +419,7 @@ pipeline {
                         }
                     }
                 }
-                stage('Run Tox'){
+                stage('Tox'){
                     when{
                         equals expected: true, actual: params.TEST_RUN_TOX
                     }
@@ -456,7 +456,9 @@ pipeline {
                                     failFast: true
                                 )
                             }
-                            parallel(windowsJobs + linuxJobs)
+                            stage('Run Tox'){
+                                parallel(windowsJobs + linuxJobs)
+                            }
                         }
                     }
                 }
