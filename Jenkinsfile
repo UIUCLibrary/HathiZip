@@ -645,6 +645,7 @@ pipeline {
                                                         checkout scm
                                                         unstash 'dist'
                                                     },
+                                                    retries: 3,
                                                     testCommand: {
                                                         findFiles(glob: 'dist/*.tar.gz').each{
                                                             sh(label: 'Running Tox',
@@ -671,6 +672,7 @@ pipeline {
                                                         checkout scm
                                                         unstash 'dist'
                                                     },
+                                                    retries: 3,
                                                     testCommand: {
                                                         findFiles(glob: 'dist/*.whl').each{
                                                             sh(label: 'Running Tox',
