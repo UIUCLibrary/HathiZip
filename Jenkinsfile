@@ -477,16 +477,21 @@ pipeline {
             stages{
                 stage('Source and Wheel formats'){
                     agent {
-                        dockerfile {
-                            filename 'ci/docker/python/linux/jenkins/Dockerfile'
-                            label 'linux && docker && x86'
-                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_TRUSTED_HOST --build-arg PYTHON_VERSION=3.11 --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip'
-                            args '--mount source=pipcache_hathizip,target=/.cache/pip'
-                        }
+                        docker{
+                            image 'python'
+                            label 'linux && docker'
+                          }
                     }
                     steps{
                         timeout(5){
-                            sh 'python setup.py sdist -d dist bdist_wheel -d dist'
+                            withEnv(['PIP_NO_CACHE_DIR=off']) {
+                                sh(label: 'Build Python Package',
+                                   script: '''python -m venv venv --upgrade-deps
+                                              venv/bin/pip install build
+                                              venv/bin/python -m build .
+                                              '''
+                                    )
+                            }
                         }
                     }
                     post{
