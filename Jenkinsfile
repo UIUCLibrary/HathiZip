@@ -584,7 +584,7 @@ pipeline {
                                                     args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
-                                            retries: 1,
+                                            retries: 3,
                                             testSetup: {
                                                 checkout scm
                                                 unstash 'dist'
@@ -609,6 +609,7 @@ pipeline {
                                                     args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
+                                            retries: 3,
                                             testSetup: {
                                                 sh( script: 'printenv', label: 'checking env variables')
                                                 checkout scm
