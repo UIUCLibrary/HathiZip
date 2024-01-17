@@ -792,6 +792,7 @@ pipeline {
                                                         credentialsId: DEVPI_CONFIG.credentialsId,
                                                         devpiExec: 'venv/bin/devpi'
                                                     ],
+                                                    retries: 3,
                                                     package:[
                                                         name: props.Name,
                                                         version: props.Version,
@@ -823,6 +824,7 @@ pipeline {
                                                     agent: [
                                                         label: "mac && python${pythonVersion} && devpi-access && ${processorArchitecture}"
                                                     ],
+                                                    retries: 3,
                                                     devpi: [
                                                         index: DEVPI_CONFIG.stagingIndex,
                                                         server: DEVPI_CONFIG.server,
