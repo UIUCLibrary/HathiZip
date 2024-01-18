@@ -1,4 +1,4 @@
-library identifier: 'JenkinsPythonHelperLibrary@update-tox-command', retriever: modernSCM(
+library identifier: 'JenkinsPythonHelperLibrary@2024.1.2', retriever: modernSCM(
   [$class: 'GitSCMSource',
    remote: 'https://github.com/UIUCLibrary/JenkinsPythonHelperLibrary.git',
    ])
