@@ -632,66 +632,66 @@ pipeline {
                             SUPPORTED_MAC_VERSIONS.each{ pythonVersion ->
                                 def architectures = []
                                 if(params.INCLUDE_MACOS_ARM == true){
-                                    architectures.add('m1')
+                                    architectures.add('arm64')
                                 }
                                 if(params.INCLUDE_MACOS_X86_64 == true){
                                     architectures.add('x86_64')
                                 }
                                 architectures.each{ processorArchitecture ->
-                                    if (nodesByLabel("mac && ${processorArchitecture} && python${pythonVersion}").size() > 0){
+                                    if (nodesByLabel("python${pythonVersion} && mac && ${processorArchitecture} || emulated_${processorArchitecture}").size() > 0){
                                         macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: sdist"] = {
                                             testPythonPkg(
-                                                    agent: [
-                                                        label: "mac && python${pythonVersion} && ${processorArchitecture}",
-                                                    ],
-                                                    testSetup: {
-                                                        checkout scm
-                                                        unstash 'dist'
-                                                    },
-                                                    retries: 3,
-                                                    testCommand: {
-                                                        findFiles(glob: 'dist/*.tar.gz').each{
-                                                            sh(label: 'Running Tox',
-                                                               script: """python${pythonVersion} -m venv venv
-                                                               ./venv/bin/python -m pip install --upgrade pip
-                                                               ./venv/bin/pip install -r requirements/requirements_tox.txt
-                                                               ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
-                                                            )
-                                                        }
-                                                    },
-                                                    post:[
-                                                        cleanup: {
-                                                            sh 'rm -r venv/'
-                                                        }
-                                                    ]
-                                                )
+                                                agent: [
+                                                    label: "mac && python${pythonVersion} && ${processorArchitecture} || emulated_${processorArchitecture}",
+                                                ],
+                                                testSetup: {
+                                                    checkout scm
+                                                    unstash 'dist'
+                                                },
+                                                retries: 3,
+                                                testCommand: {
+                                                    findFiles(glob: 'dist/*.tar.gz').each{
+                                                        sh(label: 'Running Tox',
+                                                           script: """arch -${processorArchitecture} python${pythonVersion} -m venv venv
+                                                           ./venv/bin/python -m pip install --upgrade pip
+                                                           ./venv/bin/pip install -r requirements/requirements_tox.txt
+                                                           ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
+                                                        )
+                                                    }
+                                                },
+                                                post:[
+                                                    cleanup: {
+                                                        sh 'rm -r venv/'
+                                                    }
+                                                ]
+                                            )
                                         }
                                         macTests["Mac ${processorArchitecture} - Python ${pythonVersion}: wheel"] = {
                                             testPythonPkg(
-                                                    agent: [
-                                                        label: "mac && python${pythonVersion} && ${processorArchitecture}",
-                                                    ],
-                                                    testSetup: {
-                                                        checkout scm
-                                                        unstash 'dist'
-                                                    },
-                                                    retries: 3,
-                                                    testCommand: {
-                                                        findFiles(glob: 'dist/*.whl').each{
-                                                            sh(label: 'Running Tox',
-                                                               script: """python${pythonVersion} -m venv venv
-                                                               ./venv/bin/python -m pip install --upgrade pip
-                                                               ./venv/bin/pip install -r requirements/requirements_tox.txt
-                                                               ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
-                                                            )
-                                                        }
-                                                    },
-                                                    post:[
-                                                        cleanup: {
-                                                            sh 'rm -r venv/'
-                                                        }
-                                                    ]
-                                                )
+                                                agent: [
+                                                    label: "mac && python${pythonVersion} && ${processorArchitecture} || emulated_${processorArchitecture}",
+                                                ],
+                                                testSetup: {
+                                                    checkout scm
+                                                    unstash 'dist'
+                                                },
+                                                retries: 3,
+                                                testCommand: {
+                                                    findFiles(glob: 'dist/*.whl').each{
+                                                        sh(label: 'Running Tox',
+                                                           script: """arch -${processorArchitecture} python${pythonVersion} -m venv venv
+                                                           ./venv/bin/python -m pip install --upgrade pip
+                                                           ./venv/bin/pip install -r requirements/requirements_tox.txt
+                                                           ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
+                                                        )
+                                                    }
+                                                },
+                                                post:[
+                                                    cleanup: {
+                                                        sh 'rm -r venv/'
+                                                    }
+                                                ]
+                                            )
                                         }
                                     } else {
                                         echo "Skipping testing on ${processorArchitecture} Mac with Python ${pythonVersion} due to no available agents."
@@ -773,7 +773,7 @@ pipeline {
                             SUPPORTED_MAC_VERSIONS.each{pythonVersion ->
                                 def architectures = []
                                 if(params.INCLUDE_MACOS_ARM == true){
-                                    architectures.add('m1')
+                                    architectures.add('arm64')
                                 }
                                 if(params.INCLUDE_MACOS_X86_64 == true){
                                     architectures.add('x86_64')
