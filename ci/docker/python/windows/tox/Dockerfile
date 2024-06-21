@@ -1,8 +1,12 @@
 # escape=`
 ARG PIPX_HOME=c:\pipx
+
 ARG FROM_IMAGE=mcr.microsoft.com/dotnet/framework/sdk:4.8
+ARG UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv
 ARG PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip
+
 FROM ${FROM_IMAGE} AS base_image
+
 FROM base_image AS certsgen
 RUN certutil -generateSSTFromWU roots.sst
 
@@ -62,19 +66,25 @@ ARG PIP_EXTRA_INDEX_URL
 ARG PIP_INDEX_URL
 COPY requirements-dev.txt c:/python_requirments/
 COPY requirements/ c:/python_requirments/requirements
-RUN python -m pip install --no-cache-dir pip --upgrade ; pip install --no-cache-dir -r c:/python_requirments/requirements-dev.txt
+RUN python -m pip install --no-cache-dir pip --upgrade ; pip install --no-cache-dir -r c:/python_requirments/requirements/requirements_tox.txt
 
 ARG PIP_DOWNLOAD_CACHE
 RUN New-Item -type directory -path ${Env:PIP_DOWNLOAD_CACHE} -Force
 ENV PIP_DOWNLOAD_CACHE=${PIP_DOWNLOAD_CACHE}
 
+ARG UV_CACHE_DIR
+RUN New-Item -type directory -path ${Env:UV_CACHE_DIR} -Force
+ENV UV_CACHE_DIR=${UV_CACHE_DIR}
+
 ARG PIPX_HOME
 ENV PIPX_HOME=${PIPX_HOME}
 ENV PIPX_BIN_DIR=${PIPX_HOME}\bin
+
 
 RUN py -3 -m pip install --no-cache-dir pipx ; `
     py -3 -m pipx ensurepath
 RUN py -3 -m pipx install 'devpi-client<8.0'
 
+ENV UV_INDEX_STRATEGY=unsafe-best-match
 WORKDIR C:/src
 CMD ["tox", "--workdir", "${Env:TEMP}\\tox\\", "-vv",  "--recreate"]
