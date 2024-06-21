@@ -426,7 +426,7 @@ pipeline {
                                                 envNamePrefix: 'Tox Linux',
                                                 label: 'linux && docker',
                                                 dockerfile: 'ci/docker/python/linux/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_CACHE_DIR=/.cache/uv',
                                                 dockerRunArgs: '-v pipcache_hathizip:/.cache/pip',
                                                 retry: 2
                                             )
@@ -436,8 +436,8 @@ pipeline {
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
-                                                dockerRunArgs: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip',
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
+                                                dockerRunArgs: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip -v uvcache_hathizip:c:/users/containeradministrator/appdata/local/uv',
                                                 retry: 2
 
                                             )
@@ -517,8 +517,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
-                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip -v uvcache_hathizip:c:/users/containeradministrator/appdata/local/uv'
                                                 ]
                                             ],
                                             retries: 3,
@@ -539,8 +539,8 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
-                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip -v uvcache_hathizip:c:/users/containeradministrator/appdata/local/uv'
                                                 ]
                                             ],
                                             retries: 3,
@@ -574,7 +574,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_CACHE_DIR=/.cache/uv',
                                                     args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
@@ -599,7 +599,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: "linux && docker && ${processorArchitecture}",
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_CACHE_DIR=/.cache/uv',
                                                     args: '-v pipcache_hathizip:/.cache/pip',
                                                 ]
                                             ],
@@ -644,13 +644,15 @@ pipeline {
                                                 },
                                                 retries: 3,
                                                 testCommand: {
-                                                    findFiles(glob: 'dist/*.tar.gz').each{
-                                                        sh(label: 'Running Tox',
-                                                           script: """arch -${processorArchitecture} python${pythonVersion} -m venv venv
-                                                           ./venv/bin/python -m pip install --upgrade pip
-                                                           ./venv/bin/pip install -r requirements/requirements_tox.txt
-                                                           ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
-                                                        )
+                                                    withEnv(['UV_INDEX_STRATEGY=unsafe-best-match']) {
+                                                        findFiles(glob: 'dist/*.tar.gz').each{
+                                                            sh(label: 'Running Tox',
+                                                               script: """arch -${processorArchitecture} python${pythonVersion} -m venv venv
+                                                               ./venv/bin/python -m pip install --upgrade pip
+                                                               ./venv/bin/pip install -r requirements/requirements_tox.txt
+                                                               ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
+                                                            )
+                                                        }
                                                     }
                                                 },
                                                 post:[
@@ -671,13 +673,15 @@ pipeline {
                                                 },
                                                 retries: 3,
                                                 testCommand: {
-                                                    findFiles(glob: 'dist/*.whl').each{
-                                                        sh(label: 'Running Tox',
-                                                           script: """arch -${processorArchitecture} python${pythonVersion} -m venv venv
-                                                           ./venv/bin/python -m pip install --upgrade pip
-                                                           ./venv/bin/pip install -r requirements/requirements_tox.txt
-                                                           ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
-                                                        )
+                                                    withEnv(['UV_INDEX_STRATEGY=unsafe-best-match']) {
+                                                        findFiles(glob: 'dist/*.whl').each{
+                                                            sh(label: 'Running Tox',
+                                                               script: """arch -${processorArchitecture} python${pythonVersion} -m venv venv
+                                                               ./venv/bin/python -m pip install --upgrade pip
+                                                               ./venv/bin/pip install -r requirements/requirements_tox.txt
+                                                               ./venv/bin/tox --installpkg ${it.path} -e py${pythonVersion.replace('.', '')}"""
+                                                            )
+                                                        }
                                                     }
                                                 },
                                                 post:[
@@ -863,7 +867,8 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip -v uvcache_hathizip:c:/users/containeradministrator/appdata/local/uv',
                                                     label: 'windows && docker && devpi-access'
                                                 ]
                                             ],
@@ -891,7 +896,8 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip --build-arg UV_CACHE_DIR=c:/users/containeradministrator/appdata/local/uv',
+                                                    args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip -v uvcache_hathizip:c:/users/containeradministrator/appdata/local/uv',
                                                     label: 'windows && docker && devpi-access'
                                                 ]
                                             ],
@@ -928,7 +934,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_CACHE_DIR=/.cache/uv',
                                                     label: "linux && docker && devpi-access && ${processorArchitecture}",
                                                     args: '-v pipcache_hathizip:/.cache/pip'
                                                 ]
@@ -958,7 +964,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/linux/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_CACHE_DIR=/.cache/uv',
                                                     label: "linux && docker && devpi-access && ${processorArchitecture}",
                                                     args: '-v pipcache_hathizip:/.cache/pip'
                                                 ]
@@ -1002,7 +1008,7 @@ pipeline {
                     }
                     agent {
                         dockerfile {
-                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip'
+                            additionalBuildArgs '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=/.cache/pip --build-arg UV_CACHE_DIR=/.cache/uv'
                             filename 'ci/docker/python/linux/tox/Dockerfile'
                             label 'linux && docker && devpi-access'
                         }
