@@ -436,7 +436,7 @@ pipeline {
                                                 envNamePrefix: 'Tox Windows',
                                                 label: 'windows && docker',
                                                 dockerfile: 'ci/docker/python/windows/tox/Dockerfile',
-                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
+                                                dockerArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                 dockerRunArgs: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip',
                                                 retry: 2
 
@@ -517,7 +517,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                     args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
@@ -539,7 +539,7 @@ pipeline {
                                                 dockerfile: [
                                                     label: 'windows && docker',
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                     args: '-v pipcache_hathizip:c:/users/containeradministrator/appdata/local/pip'
                                                 ]
                                             ],
@@ -863,7 +863,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                     label: 'windows && docker && devpi-access'
                                                 ]
                                             ],
@@ -891,7 +891,7 @@ pipeline {
                                             agent: [
                                                 dockerfile: [
                                                     filename: 'ci/docker/python/windows/tox/Dockerfile',
-                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL',
+                                                    additionalBuildArgs: '--build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip',
                                                     label: 'windows && docker && devpi-access'
                                                 ]
                                             ],
@@ -1048,7 +1048,7 @@ pipeline {
                 cleanup{
                     node('linux && docker && devpi-access') {
                        script{
-                            def dockerImage = docker.build('hathizip:devpi','-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL .')
+                            def dockerImage = docker.build('hathizip:devpi','-f ci/docker/python/linux/tox/Dockerfile --build-arg PIP_EXTRA_INDEX_URL --build-arg PIP_INDEX_URL --build-arg CHOCOLATEY_SOURCE --build-arg chocolateyVersion --build-arg PIP_DOWNLOAD_CACHE=c:/users/containeradministrator/appdata/local/pip .')
                             dockerImage.inside{
                                 devpi.removePackage(
                                     pkgName: props.Name,
