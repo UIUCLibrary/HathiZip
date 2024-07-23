@@ -464,12 +464,15 @@ pipeline {
                 beforeAgent true
             }
             stages{
-                stage('Source and Wheel formats'){
+                stage('Source and Wheel Formats'){
                     agent {
                         docker{
                             image 'python'
                             label 'linux && docker'
                           }
+                    }
+                    options {
+                        retry(2)
                     }
                     steps{
                         timeout(5){
