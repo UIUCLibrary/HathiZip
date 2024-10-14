@@ -44,51 +44,11 @@ def startup(){
                     mineRepository()
                 }
             },
-            'Getting Distribution Info': {
-                node('linux && docker') {
-                    timeout(2){
-                        ws{
-                            checkout scm
-                            try{
-                                docker.image('python').inside {
-                                    withEnv(['PIP_NO_CACHE_DIR=off']) {
-                                        sh(
-                                           label: 'Running setup.py with dist_info',
-                                           script: '''python --version
-                                                      python setup.py dist_info
-                                                   '''
-                                        )
-                                    }
-                                    stash includes: '*.dist-info/**', name: 'DIST-INFO'
-                                    archiveArtifacts artifacts: '*.dist-info/**'
-                                }
-                            } finally{
-                                deleteDir()
-                            }
-                        }
-                    }
-                }
-            }
         ]
     )
 }
 
-def get_props(){
-    stage('Reading Package Metadata'){
-        node(){
-            unstash 'DIST-INFO'
-            def metadataFile = findFiles( glob: '*.dist-info/METADATA')[0]
-            def metadata = readProperties(interpolate: true, file: metadataFile.path )
-            echo """Version = ${metadata.Version}
-Name = ${metadata.Name}
-"""
-            return metadata
-        }
-    }
-}
-
 startup()
-def props = get_props()
 
 pipeline {
     agent none
@@ -180,7 +140,10 @@ pipeline {
                                 always {
                                     recordIssues(tools: [sphinxBuild(name: 'Sphinx Documentation Build', pattern: 'logs/build_sphinx.log')])
                                     archiveArtifacts artifacts: 'logs/build_sphinx.log'
-                                    zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.Name}-${props.Version}.doc.zip"
+                                    script{
+                                        def props = readTOML( file: 'pyproject.toml')['project']
+                                        zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
+                                    }
                                     stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
                                 }
                                 success{
@@ -348,9 +311,10 @@ pipeline {
                                     steps{
                                         script{
                                             def sonarqube = load 'ci/jenkins/scripts/sonarqube.groovy'
+                                            def props = readTOML( file: 'pyproject.toml')['project']
                                             sonarqube.sonarcloudSubmit(
                                                 credentialsId: params.SONARCLOUD_TOKEN,
-                                                projectVersion: props.Version
+                                                projectVersion: props.version
                                             )
                                             milestone label: 'sonarcloud'
                                         }
