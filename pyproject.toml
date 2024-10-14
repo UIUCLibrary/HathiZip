@@ -2,6 +2,43 @@
 requires = ["setuptools>=50.3.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "HathiZip"
+version = "0.1.12.dev0"
+requires-python = ">=3.8"
+readme = "README.rst"
+license = {text = "University of Illinois/NCSA Open Source License"}
+authors = [
+    {name = "University Library at The University of Illinois at Urbana Champaign: Preservation Services", email = "prescons@library.illinois.edu"},
+]
+maintainers = [
+    {name = "Henry Borchers", email = "hborcher@illinois.edu"}
+]
+description = "Creates .zip file packages for HathiTrust. Replacement script for HathiTrust Zip and Submit."
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: University of Illinois/NCSA Open Source License",
+    "Topic :: System :: Archiving :: Packaging",
+    "Topic :: System :: Archiving :: Compression",
+]
+
+[project.urls]
+Documentation = "https://www.library.illinois.edu/dccdocs/hathi_zip/"
+Download = "https://github.com/UIUCLibrary/HathiZip"
+
+[tool.setuptools]
+packages = [
+    "hathizip",
+]
+zip-safe = false
+
+[tool.setuptools.package-data]
+hathizip = ["py.typed"]
+
+[project.scripts]
+hathivalidate = "hathizip.__main__:main"
+
 [tool.coverage.run]
 branch = true
 source = ["hathizip"]
@@ -17,3 +54,13 @@ exclude_lines =[
 
 [tool.cibuildwheel]
 build = "*"
+
+[tool.mypy]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--verbose"
+testpaths = [
+    "tests"
+]
+
