@@ -22,17 +22,9 @@ import sys
 import tomllib
 import re
 
-try:
-    from setuptools.config.setupcfg import read_configuration
-except ModuleNotFoundError:
-    from setuptools.config import read_configuration
-
 sys.path.insert(0, os.path.abspath('../..'))
 
-# metadata = dict()
-# metadata_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../hathizip', '__version__.py')
-# with open(metadata_file, 'r', encoding='utf-8') as f:
-#     exec(f.read(), metadata)
+
 def get_project_metadata():
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../pyproject.toml"))
     with open(path, "rb") as f:
