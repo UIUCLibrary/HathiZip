@@ -160,7 +160,7 @@ pipeline {
                             agent {
                                 docker{
                                     image 'python'
-                                    label 'docker && linux'
+                                    label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
                                     args '--mount source=python-tmp-hathizip,target=/tmp'
                                 }
                             }
@@ -816,7 +816,6 @@ pipeline {
                         beforeAgent true
                         beforeInput true
                     }
-
                     environment{
                         PIP_CACHE_DIR='/tmp/pipcache'
                         UV_INDEX_STRATEGY='unsafe-best-match'
