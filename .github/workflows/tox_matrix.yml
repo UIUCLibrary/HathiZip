@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-2019]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         include:
           - os: macos-latest
           - os: ubuntu-latest
@@ -22,6 +22,6 @@ jobs:
       - name: Install requirements
         run: |
           pip install wheel
-          pip install -r requirements/requirements_tox.txt
+          pip install -r requirements-dev.txt
       - name: Run tox
         run: tox -e py -vvv

@@ -109,10 +109,11 @@ pipeline {
                                 catchError(buildResult: 'UNSTABLE', message: 'Building documentation produced an error or a warning', stageResult: 'UNSTABLE') {
                                     sh(
                                         label: 'Building docs',
-                                        script: '''python3 -m venv venv && venv/bin/pip install uv
-                                                   . ./venv/bin/activate
+                                        script: '''python3 -m venv venv
+                                                   trap "rm -rf venv" EXIT
+                                                   venv/bin/pip install --disable-pip-version-check uv
                                                    mkdir -p logs
-                                                   uvx --python 3.12 --from sphinx sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                   venv/bin/uvx --python 3.12 --from sphinx sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
                                                    '''
                                     )
                                 }
@@ -172,7 +173,7 @@ pipeline {
                                                 sh(
                                                     label: 'Create virtual environment',
                                                     script: '''python3 -m venv bootstrap_uv
-                                                               bootstrap_uv/bin/pip install uv
+                                                               bootstrap_uv/bin/pip install --disable-pip-version-check uv
                                                                bootstrap_uv/bin/uv venv --python 3.12  venv
                                                                . ./venv/bin/activate
                                                                bootstrap_uv/bin/uv pip install uv
@@ -335,7 +336,7 @@ pipeline {
                                                 sh(
                                                     label: 'Running Sonar Scanner',
                                                     script: """. ./venv/bin/activate
-                                                                uv tool run pysonar-scanner -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}
+                                                                uvx pysonar-scanner -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}
                                                             """
                                                 )
                                             }
@@ -406,7 +407,7 @@ pipeline {
                                         docker.image('python').inside('--mount source=python-tmp-hathizip,target=/tmp'){
                                             try{
                                                 checkout scm
-                                                sh(script: 'python3 -m venv venv && venv/bin/pip install uv')
+                                                sh(script: 'python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv')
                                                 envs = sh(
                                                     label: 'Get tox environments',
                                                     script: './venv/bin/uvx --quiet --with tox-uv tox list -d --no-desc',
@@ -434,10 +435,11 @@ pipeline {
                                                             checkout scm
                                                             try{
                                                                 sh( label: 'Running Tox',
-                                                                    script: """python3 -m venv venv && venv/bin/pip install uv
-                                                                               . ./venv/bin/activate
-                                                                               uv python install cpython-${version}
-                                                                               uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                    script: """python3 -m venv venv
+                                                                               trap "rm -rf venv" EXIT
+                                                                               venv/bin/pip install --disable-pip-version-check uv
+                                                                               venv/bin/uv python install cpython-${version}
+                                                                               venv/bin/uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
                                                                             """
                                                                     )
                                                             } catch(e) {
@@ -482,7 +484,7 @@ pipeline {
                                         docker.image('python').inside('--mount source=python-tmp-hathizip,target=C:\\Users\\ContainerUser\\Documents'){
                                             try{
                                                 checkout scm
-                                                bat(script: 'python -m venv venv && venv\\Scripts\\pip install uv')
+                                                bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
                                                 envs = bat(
                                                     label: 'Get tox environments',
                                                     script: '@.\\venv\\Scripts\\uvx --quiet --with tox-uv tox list -d --no-desc',
@@ -510,13 +512,15 @@ pipeline {
                                                             checkout scm
                                                             try{
                                                                 bat(label: 'Install uv',
-                                                                    script: 'python -m venv venv && venv\\Scripts\\pip install uv'
+                                                                    script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv'
                                                                 )
                                                                 retry(3){
                                                                     bat(label: 'Running Tox',
-                                                                        script: """call venv\\Scripts\\activate.bat
-                                                                               uv python install cpython-${version}
-                                                                               uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                        script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                                venv\\Scripts\\uv python install cpython-${version}
+                                                                                venv\\Scripts\\uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                rmdir /S /Q .tox
+                                                                                rmdir /S /Q venv
                                                                             """
                                                                     )
                                                                 }
@@ -570,9 +574,9 @@ pipeline {
                     steps{
                         sh(
                             label: 'Package',
-                            script: '''python3 -m venv venv && venv/bin/pip install uv
-                                       . ./venv/bin/activate
-                                       uv build
+                            script: '''python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv
+                                       trap "rm -rf venv" EXIT
+                                       venv/bin/uv build
                                     '''
                         )
                     }
@@ -599,11 +603,14 @@ pipeline {
                         equals expected: true, actual: params.TEST_PACKAGES
                         beforeAgent true
                     }
+                    environment{
+                        UV_INDEX_STRATEGY='unsafe-best-match'
+                    }
                     matrix {
                         axes {
                             axis {
                                 name 'PYTHON_VERSION'
-                                values  '3.9', '3.10', '3.11', '3.12'
+                                values  '3.9', '3.10', '3.11', '3.12', '3.13'
                             }
                             axis {
                                 name 'OS'
@@ -650,7 +657,6 @@ pipeline {
                                 }
                                 environment{
                                     PIP_CACHE_DIR="${isUnix() ? '/tmp/pipcache': 'C:\\Users\\ContainerUser\\Documents\\pipcache'}"
-                                    UV_INDEX_STRATEGY='unsafe-best-match'
                                     UV_TOOL_DIR="${isUnix() ? '/tmp/uvtools': 'C:\\Users\\ContainerUser\\Documents\\uvtools'}"
                                     UV_PYTHON_INSTALL_DIR="${isUnix() ? '/tmp/uvpython': 'C:\\Users\\ContainerUser\\Documents\\uvpython'}"
                                     UV_CACHE_DIR="${isUnix() ? '/tmp/uvcache': 'C:\\Users\\ContainerUser\\Documents\\uvcache'}"
@@ -663,25 +669,20 @@ pipeline {
                                             sh(
                                                 label: 'Testing with tox',
                                                 script: """python3 -m venv venv
-                                                           . ./venv/bin/activate
-                                                           pip install uv
-                                                           UV_INDEX_STRATEGY=unsafe-best-match uvx --with tox-uv tox --installpkg ${installpkg} -e py${PYTHON_VERSION.replace('.', '')}
+                                                           trap "rm -rf venv" EXIT
+                                                           ./venv/bin/pip install --disable-pip-version-check uv
+                                                           ./venv/bin/uvx --with tox-uv tox --installpkg ${installpkg} -e py${PYTHON_VERSION.replace('.', '')}
                                                         """
                                             )
                                         } else {
-                                            bat(
-                                                label: 'Install uv',
-                                                script: """python -m venv venv
-                                                           call venv\\Scripts\\activate.bat
-                                                           pip install uv
-                                                        """
-                                            )
                                             script{
                                                 retry(3){
                                                     bat(
                                                         label: 'Testing with tox',
-                                                        script: """call venv\\Scripts\\activate.bat
-                                                                   uvx --index-strategy=unsafe-best-match --with tox-uv tox --installpkg ${installpkg} -e py${PYTHON_VERSION.replace('.', '')}
+                                                        script: """python -m venv venv
+                                                                   venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                   venv\\Scripts\\uvx --index-strategy=unsafe-best-match --with tox-uv tox --installpkg ${installpkg} -e py${PYTHON_VERSION.replace('.', '')}
+                                                                   rmdir /S /Q venv
                                                                 """
                                                     )
                                                 }
@@ -715,9 +716,9 @@ pipeline {
                                     sh(
                                         label: 'Testing with tox',
                                         script: """python3 -m venv venv
-                                                   . ./venv/bin/activate
-                                                   pip install uv
-                                                   UV_INDEX_STRATEGY=unsafe-best-match uvx --with tox-uv tox --installpkg ${findFiles(glob: PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${PYTHON_VERSION.replace('.', '')}
+                                                   trap "rm -rf venv" EXIT
+                                                   ./venv/bin/pip install --disable-pip-version-check uv
+                                                   ./venv/bin/uvx --index-strategy=unsafe-best-match --with-requirements requirements-dev.txt --with tox-uv tox run --installpkg ${findFiles(glob: PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${PYTHON_VERSION.replace('.', '')}
                                                 """
                                     )
                                 }
@@ -791,9 +792,9 @@ pipeline {
                                     sh(
                                         label: 'Uploading to pypi',
                                         script: '''python3 -m venv venv
-                                                   . ./venv/bin/activate
-                                                   pip install uv
-                                                   UV_INDEX_STRATEGY=unsafe-best-match uvx twine --installpkg upload --disable-progress-bar --non-interactive dist/*
+                                                   trap "rm -rf venv" EXIT
+                                                   ./venv/bin/pip install --disable-pip-version-check uv
+                                                   UV_INDEX_STRATEGY=unsafe-best-match ./venv/bin/uvx twine --installpkg upload --disable-progress-bar --non-interactive dist/*
                                                 '''
                                     )
                             }
