@@ -28,24 +28,6 @@ def get_sonarqube_unresolved_issues(report_task_file){
 
 // ****************************************************************************
 
-def startup(){
-    node(){
-        checkout scm
-        parallel(
-            [
-                failFast: true,
-                'Loading Reference Build Information': {
-                    discoverGitReferenceBuild()
-                },
-                'Enable Git Forensics': {
-                    mineRepository()
-                },
-            ]
-        )
-    }
-}
-
-startup()
 def call() {
     pipeline {
         agent none
@@ -170,6 +152,8 @@ def call() {
                                         stages{
                                             stage('Setup Testing Environment'){
                                                 steps{
+                                                    discoverGitReferenceBuild()
+                                                    mineRepository()
                                                     sh(
                                                         label: 'Create virtual environment',
                                                         script: '''python3 -m venv bootstrap_uv
