@@ -420,8 +420,8 @@ def call() {
                                                     {
                                                         node('docker && linux'){
                                                             docker.image('python').inside('--mount source=python-tmp-galatea,target=/tmp'){
-                                                                checkout scm
                                                                 try{
+                                                                    checkout scm
                                                                     sh( label: 'Running Tox',
                                                                         script: """python3 -m venv venv
                                                                                    trap "rm -rf venv" EXIT
@@ -497,12 +497,12 @@ def call() {
                                                     {
                                                         node('docker && windows'){
                                                             docker.image('python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
-                                                                checkout scm
                                                                 try{
-                                                                    bat(label: 'Install uv',
-                                                                        script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv'
-                                                                    )
                                                                     retry(3){
+                                                                        checkout scm
+                                                                        bat(label: 'Install uv',
+                                                                            script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv'
+                                                                        )
                                                                         bat(label: 'Running Tox',
                                                                             script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                                     venv\\Scripts\\uv python install cpython-${version}
