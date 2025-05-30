@@ -99,7 +99,7 @@ def call() {
                                                        trap "rm -rf venv" EXIT
                                                        venv/bin/pip install --disable-pip-version-check uv
                                                        mkdir -p logs
-                                                       venv/bin/uvx --python 3.12 --from sphinx sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                       venv/bin/uvx --python 3.12 --constraint=requirements-dev.txt --from sphinx sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
                                                        '''
                                         )
                                     }
@@ -392,24 +392,18 @@ def call() {
                                     script{
                                         def envs = []
                                         node('docker && linux'){
-                                            docker.image('python').inside('--mount source=python-tmp-hathizip,target=/tmp'){
-                                                try{
-                                                    checkout scm
+                                            try{
+                                                checkout scm
+                                                docker.image('python').inside('--mount source=python-tmp-hathizip,target=/tmp'){
                                                     sh(script: 'python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv')
                                                     envs = sh(
                                                         label: 'Get tox environments',
-                                                        script: './venv/bin/uvx --quiet --with tox-uv tox list -d --no-desc',
+                                                        script: './venv/bin/uvx --constraint=requirements-dev.txt --quiet --with tox-uv tox list -d --no-desc',
                                                         returnStdout: true,
                                                     ).trim().split('\n')
-                                                } finally{
-                                                    cleanWs(
-                                                        patterns: [
-                                                            [pattern: 'venv/', type: 'INCLUDE'],
-                                                            [pattern: '.tox', type: 'INCLUDE'],
-                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
                                                 }
+                                            } finally{
+                                                sh "${tool(name: 'Default', type: 'git')} clean -dfx"
                                             }
                                         }
                                         parallel(
@@ -419,32 +413,26 @@ def call() {
                                                     "Tox Environment: ${toxEnv}",
                                                     {
                                                         node('docker && linux'){
-                                                            docker.image('python').inside('--mount source=python-tmp-galatea,target=/tmp'){
-                                                                try{
-                                                                    checkout scm
+                                                            try{
+                                                                checkout scm
+                                                                docker.image('python').inside('--mount source=python-tmp-galatea,target=/tmp'){
                                                                     sh( label: 'Running Tox',
                                                                         script: """python3 -m venv venv
                                                                                    trap "rm -rf venv" EXIT
                                                                                    venv/bin/pip install --disable-pip-version-check uv
                                                                                    venv/bin/uv python install cpython-${version}
-                                                                                   venv/bin/uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                   venv/bin/uvx -p ${version} --constraint=requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
                                                                                 """
                                                                         )
-                                                                } catch(e) {
-                                                                    sh(script: '''. ./venv/bin/activate
-                                                                          uv python list
-                                                                          '''
-                                                                            )
-                                                                    throw e
-                                                                } finally{
-                                                                    cleanWs(
-                                                                        patterns: [
-                                                                            [pattern: 'venv/', type: 'INCLUDE'],
-                                                                            [pattern: '.tox', type: 'INCLUDE'],
-                                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                                        ]
-                                                                    )
                                                                 }
+                                                            } catch(e) {
+                                                                sh(script: '''. ./venv/bin/activate
+                                                                      uv python list
+                                                                      '''
+                                                                        )
+                                                                throw e
+                                                            } finally{
+                                                                sh "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                             }
                                                         }
                                                     }
@@ -469,24 +457,18 @@ def call() {
                                     script{
                                         def envs = []
                                         node('docker && windows'){
-                                            docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
-                                                try{
-                                                    checkout scm
+                                            try{
+                                                checkout scm
+                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
                                                     bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
                                                     envs = bat(
                                                         label: 'Get tox environments',
-                                                        script: '@.\\venv\\Scripts\\uvx --quiet --with tox-uv tox list -d --no-desc',
+                                                        script: '@.\\venv\\Scripts\\uvx --quiet --constraint=requirements-dev.txt --with tox-uv tox list -d --no-desc',
                                                         returnStdout: true,
                                                     ).trim().split('\r\n')
-                                                } finally{
-                                                    cleanWs(
-                                                        patterns: [
-                                                            [pattern: 'venv/', type: 'INCLUDE'],
-                                                            [pattern: '.tox', type: 'INCLUDE'],
-                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                        ]
-                                                    )
                                                 }
+                                            } finally{
+                                                bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                             }
                                         }
                                         parallel(
@@ -496,31 +478,25 @@ def call() {
                                                     "Tox Environment: ${toxEnv}",
                                                     {
                                                         node('docker && windows'){
-                                                            docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
-                                                                try{
-                                                                    retry(3){
-                                                                        checkout scm
+                                                            try{
+                                                                retry(3){
+                                                                    checkout scm
+                                                                    docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
                                                                         bat(label: 'Install uv',
                                                                             script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv'
                                                                         )
                                                                         bat(label: 'Running Tox',
                                                                             script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                                     venv\\Scripts\\uv python install cpython-${version}
-                                                                                    venv\\Scripts\\uvx -p ${version} --with tox-uv tox run -e ${toxEnv}
+                                                                                    venv\\Scripts\\uvx -p ${version} --constraint=requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
                                                                                     rmdir /S /Q .tox
                                                                                     rmdir /S /Q venv
                                                                                 """
                                                                         )
                                                                     }
-                                                                } finally{
-                                                                    cleanWs(
-                                                                        patterns: [
-                                                                            [pattern: 'venv/', type: 'INCLUDE'],
-                                                                            [pattern: '.tox', type: 'INCLUDE'],
-                                                                            [pattern: '**/__pycache__/', type: 'INCLUDE'],
-                                                                        ]
-                                                                    )
                                                                 }
+                                                            } finally{
+                                                                bat "${tool(name: 'Default', type: 'git')} clean -dfx"
                                                             }
                                                         }
                                                     }
@@ -564,7 +540,7 @@ def call() {
                                 label: 'Package',
                                 script: '''python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv
                                            trap "rm -rf venv" EXIT
-                                           venv/bin/uv build
+                                           venv/bin/uv build --build-constraints=requirements-dev.txt
                                         '''
                             )
                         }
@@ -647,7 +623,7 @@ def call() {
                                                                         script: """python3 -m venv venv
                                                                                    ./venv/bin/pip install --disable-pip-version-check uv
                                                                                    ./venv/bin/uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                   ./venv/bin/uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                   ./venv/bin/uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                                 """
                                                                     )
                                                                 }
@@ -663,7 +639,7 @@ def call() {
                                                                         script: """python -m venv venv
                                                                                    .\\venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                                    .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                   .\\venv\\Scripts\\uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                   .\\venv\\Scripts\\uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                                 """
                                                                     )
                                                                 }
@@ -675,7 +651,7 @@ def call() {
                                                                 label: 'Testing with tox',
                                                                 script: """python3 -m venv venv
                                                                            ./venv/bin/pip install --disable-pip-version-check uv
-                                                                           ./venv/bin/uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                           ./venv/bin/uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                         """
                                                             )
                                                         } else {
@@ -684,7 +660,7 @@ def call() {
                                                                 script: """python -m venv venv
                                                                            .\\venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                            .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                           .\\venv\\Scripts\\uvx --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                           .\\venv\\Scripts\\uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                         """
                                                             )
                                                         }
@@ -760,7 +736,7 @@ def call() {
                                             script: '''python3 -m venv venv
                                                        trap "rm -rf venv" EXIT
                                                        ./venv/bin/pip install --disable-pip-version-check uv
-                                                       UV_INDEX_STRATEGY=unsafe-best-match ./venv/bin/uvx twine --installpkg upload --disable-progress-bar --non-interactive dist/*
+                                                       UV_INDEX_STRATEGY=unsafe-best-match ./venv/bin/uvx --constraint=requirements-dev.txt twine --installpkg upload --disable-progress-bar --non-interactive dist/*
                                                     '''
                                         )
                                 }
