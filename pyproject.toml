@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=50.3.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,8 @@ name = "HathiZip"
 version = "0.1.12.dev0"
 requires-python = ">=3.9"
 readme = "README.rst"
-license = {text = "University of Illinois/NCSA Open Source License"}
+license = "NCSA"
+license-files = ["LICENSE"]
 authors = [
     {name = "University Library at The University of Illinois at Urbana Champaign: Preservation Services", email = "prescons@library.illinois.edu"},
 ]
@@ -17,7 +18,6 @@ maintainers = [
 description = "Creates .zip file packages for HathiTrust. Replacement script for HathiTrust Zip and Submit."
 classifiers = [
     "Programming Language :: Python :: 3.9",
-    "License :: OSI Approved :: University of Illinois/NCSA Open Source License",
     "Topic :: System :: Archiving :: Packaging",
     "Topic :: System :: Archiving :: Compression",
 ]
