@@ -158,23 +158,37 @@ def call() {
                                                 steps{
                                                     discoverGitReferenceBuild()
                                                     mineRepository()
-                                                    sh(
-                                                        label: 'Create virtual environment',
-                                                        script: '''python3 -m venv bootstrap_uv
-                                                                   bootstrap_uv/bin/pip install --disable-pip-version-check uv
-                                                                   bootstrap_uv/bin/uv venv --python 3.12  venv
-                                                                   . ./venv/bin/activate
-                                                                   bootstrap_uv/bin/uv pip install uv
-                                                                   rm -rf bootstrap_uv
-                                                                   uv pip install -r requirements-dev.txt
-                                                                   '''
-                                                               )
-                                                    sh(
-                                                        label: 'Install package in development mode',
-                                                        script: '''. ./venv/bin/activate
-                                                                   uv pip install -e .
-                                                                '''
-                                                        )
+                                                    retry(3){
+                                                        script{
+                                                            try{
+                                                                sh(
+                                                                    label: 'Create virtual environment',
+                                                                    script: '''python3 -m venv bootstrap_uv
+                                                                               bootstrap_uv/bin/pip install --disable-pip-version-check uv
+                                                                               bootstrap_uv/bin/uv venv --python 3.12  venv
+                                                                               . ./venv/bin/activate
+                                                                               bootstrap_uv/bin/uv pip install uv
+                                                                               rm -rf bootstrap_uv
+                                                                               uv pip install -r requirements-dev.txt
+                                                                               '''
+                                                                           )
+                                                                sh(
+                                                                    label: 'Install package in development mode',
+                                                                    script: '''. ./venv/bin/activate
+                                                                               uv pip install -e .
+                                                                            '''
+                                                                    )
+                                                            } catch (e) {
+                                                                cleanWs(
+                                                                    patterns: [
+                                                                        [pattern: 'venv', type: 'INCLUDE'],
+                                                                        [pattern: 'bootstrap_uv', type: 'INCLUDE'],
+                                                                    ]
+                                                                )
+                                                                throw e
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                             stage('Run Tests'){
@@ -448,18 +462,24 @@ def call() {
                                 }
                                 environment{
                                     UV_INDEX_STRATEGY='unsafe-best-match'
-                                    PIP_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\pipcache'
-                                    UV_TOOL_DIR='C:\\Users\\ContainerUser\\Documents\\uvtools'
-                                    UV_PYTHON_INSTALL_DIR='C:\\Users\\ContainerUser\\Documents\\uvpython'
-                                    UV_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\uvcache'
+                                    PIP_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\cache\\pipcache'
+                                    UV_TOOL_DIR='C:\\Users\\ContainerUser\\Documents\\cache\\uvtools'
+                                    UV_PYTHON_INSTALL_DIR='C:\\Users\\ContainerUser\\Documents\\cache\\uvpython'
+                                    UV_CACHE_DIR='C:\\Users\\ContainerUser\\Documents\\cache\\uvcache'
                                 }
                                 steps{
                                     script{
                                         def envs = []
                                         node('docker && windows'){
+                                            checkout scm
                                             try{
-                                                checkout scm
-                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
+                                                docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python')
+                                                    .inside("\
+                                                        --mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR} \
+                                                        --mount type=volume,source=pipcache,target=${env.PIP_CACHE_DIR} \
+                                                        --mount type=volume,source=uv_cache_dir,target=${env.UV_CACHE_DIR}\
+                                                        "
+                                                    ){
                                                     bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
                                                     envs = bat(
                                                         label: 'Get tox environments',
@@ -481,7 +501,13 @@ def call() {
                                                             try{
                                                                 retry(3){
                                                                     checkout scm
-                                                                    docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside("--mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR}"){
+                                                                    docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python')
+                                                                        .inside("\
+                                                                            --mount type=volume,source=uv_python_install_dir,target=${env.UV_PYTHON_INSTALL_DIR} \
+                                                                            --mount type=volume,source=pipcache,target=${env.PIP_CACHE_DIR} \
+                                                                            --mount type=volume,source=uv_cache_dir,target=${env.UV_CACHE_DIR}\
+                                                                            "
+                                                                        ){
                                                                         bat(label: 'Install uv',
                                                                             script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv'
                                                                         )
@@ -610,7 +636,14 @@ def call() {
                                                     checkout scm
                                                     unstash 'PYTHON_PACKAGES'
                                                     if(['linux', 'windows'].contains(entry.OS) && params.containsKey("INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()) && params["INCLUDE_${entry.OS}-${entry.ARCHITECTURE}".toUpperCase()]){
-                                                        docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python').inside(isUnix() ? '': "--mount type=volume,source=uv_python_install_dir,target=C:\\Users\\ContainerUser\\Documents\\uvpython"){
+                                                        docker.image(env.DEFAULT_PYTHON_DOCKER_IMAGE ? env.DEFAULT_PYTHON_DOCKER_IMAGE: 'python')
+                                                            .inside(
+                                                                isUnix() ?
+                                                                '--mount source=python-tmp-hathizip,target=/tmp':
+                                                                '--mount type=volume,source=uv_python_install_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython \
+                                                                 --mount type=volume,source=pipcache,target=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache \
+                                                                 --mount type=volume,source=uv_cache_dir,target=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache'
+                                                            ){
                                                              if(isUnix()){
                                                                 withEnv([
                                                                     'PIP_CACHE_DIR=/tmp/pipcache',
@@ -629,10 +662,10 @@ def call() {
                                                                 }
                                                              } else {
                                                                 withEnv([
-                                                                    'PIP_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\pipcache',
-                                                                    'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\uvtools',
-                                                                    'UV_PYTHON_INSTALL_DIR=C:\\Users\\ContainerUser\\Documents\\uvpython',
-                                                                    'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\uvcache',
+                                                                    'PIP_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\pipcache',
+                                                                    'UV_TOOL_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvtools',
+                                                                    'UV_PYTHON_INSTALL_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvpython',
+                                                                    'UV_CACHE_DIR=C:\\Users\\ContainerUser\\Documents\\cache\\uvcache',
                                                                 ]){
                                                                     bat(
                                                                         label: 'Testing with tox',
