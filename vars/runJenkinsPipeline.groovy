@@ -99,7 +99,7 @@ def call() {
                                                        trap "rm -rf venv" EXIT
                                                        venv/bin/pip install --disable-pip-version-check uv
                                                        mkdir -p logs
-                                                       venv/bin/uvx --python 3.12 --constraint=requirements-dev.txt --from sphinx sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                       venv/bin/uv run --only-group docs sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
                                                        '''
                                         )
                                     }
