@@ -2,7 +2,6 @@ coverage[toml]
 flake8
 lxml
 mypy
-paramiko
 pylint
 pytest
 sphinx

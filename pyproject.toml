@@ -4,23 +4,32 @@ build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 docs = ["sphinx"]
-lint = [
-    "flake8",
+type_checking = [
     "mypy",
     "lxml",
-    "pylint",
 ]
+lint = [
+    "bandit",
+    "flake8",
+    "pydocstyle",
+    "pylint",
+    {include-group = "type_checking"},
+]
+tox = ["tox"]
 test = [
     "coverage[toml]",
     "pytest",
-    "tox",
+    {include-group = "tox"},
 ]
 dev = [
     {include-group = "docs"},
     {include-group = "lint"},
+    {include-group = "test"},
 ]
+release = ["twine"]
 ci = [
-    "twine",
+    "pysonar",
+    {include-group = "release"},
     {include-group = "dev"},
 ]
 

@@ -10,13 +10,6 @@ include make.bat
 # README and the files it references
 include README.rst
 
-# Running requirements
-include requirements.txt
-
-# Development requirements
-include requirements-dev.txt
-include requirements/*.txt
-exclude requirements/requirements-devpi.txt requirements/requirements-ci.txt requirements/requirements-ci-freeze.txt
 recursive-include tests *.py
 
 # Documentation
