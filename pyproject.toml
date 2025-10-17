@@ -2,6 +2,37 @@
 requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[dependency-groups]
+docs = ["sphinx"]
+type_checking = [
+    "mypy",
+    "lxml",
+]
+lint = [
+    "bandit",
+    "flake8",
+    "pydocstyle",
+    "pylint",
+    {include-group = "type_checking"},
+]
+tox = ["tox"]
+test = [
+    "coverage[toml]",
+    "pytest",
+    {include-group = "tox"},
+]
+dev = [
+    {include-group = "docs"},
+    {include-group = "lint"},
+    {include-group = "test"},
+]
+release = ["twine"]
+ci = [
+    "pysonar",
+    {include-group = "release"},
+    {include-group = "dev"},
+]
+
 [project]
 name = "HathiZip"
 version = "0.1.12.dev0"

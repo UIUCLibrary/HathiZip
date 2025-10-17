@@ -104,7 +104,7 @@ def call() {
                                                        trap "rm -rf venv" EXIT
                                                        venv/bin/pip install --disable-pip-version-check uv
                                                        mkdir -p logs
-                                                       venv/bin/uvx --python 3.12 --constraint=requirements-dev.txt --from sphinx sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
+                                                       venv/bin/uv run --only-group docs sphinx-build docs/source build/docs/html -d build/docs/.doctrees -v -w logs/build_sphinx.log -W --keep-going
                                                        '''
                                         )
                                     }
@@ -167,22 +167,15 @@ def call() {
                                                         script{
                                                             try{
                                                                 sh(
-                                                                    label: 'Create virtual environment',
+                                                                    label: 'Create virtual environment with packaging in development mode',
                                                                     script: '''python3 -m venv bootstrap_uv
                                                                                bootstrap_uv/bin/pip install --disable-pip-version-check uv
-                                                                               bootstrap_uv/bin/uv venv --python 3.12  venv
-                                                                               . ./venv/bin/activate
-                                                                               bootstrap_uv/bin/uv pip install uv
+                                                                               bootstrap_uv/bin/uv venv venv
+                                                                               UV_PROJECT_ENVIRONMENT=./venv bootstrap_uv/bin/uv sync --frozen --group ci
+                                                                               bootstrap_uv/bin/uv pip install --python=./venv/bin/python uv
                                                                                rm -rf bootstrap_uv
-                                                                               uv pip install -r requirements-dev.txt
-                                                                               '''
-                                                                           )
-                                                                sh(
-                                                                    label: 'Install package in development mode',
-                                                                    script: '''. ./venv/bin/activate
-                                                                               uv pip install -e .
                                                                             '''
-                                                                    )
+                                                               )
                                                             } catch (e) {
                                                                 cleanWs(
                                                                     patterns: [
@@ -422,7 +415,7 @@ def call() {
                                                     sh(script: 'python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv')
                                                     envs = sh(
                                                         label: 'Get tox environments',
-                                                        script: './venv/bin/uvx --constraint=requirements-dev.txt --quiet --with tox-uv tox list -d --no-desc',
+                                                        script: './venv/bin/uv run --quiet --only-group tox --with tox-uv --frozen tox list -d --no-desc',
                                                         returnStdout: true,
                                                     ).trim().split('\n')
                                                 }
@@ -439,13 +432,13 @@ def call() {
                                                         node('docker && linux'){
                                                             try{
                                                                 checkout scm
-                                                                docker.image('python').inside('--mount source=python-tmp-galatea,target=/tmp'){
+                                                                docker.image('python').inside('--mount source=python-tmp-hathizip,target=/tmp'){
                                                                     sh( label: 'Running Tox',
                                                                         script: """python3 -m venv venv
                                                                                    trap "rm -rf venv" EXIT
                                                                                    venv/bin/pip install --disable-pip-version-check uv
                                                                                    venv/bin/uv python install cpython-${version}
-                                                                                   venv/bin/uvx -p ${version} --constraint=requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
+                                                                                   venv/bin/uv run --only-group tox --with tox-uv tox run --runner uv-venv-lock-runner -e ${toxEnv} -vv
                                                                                 """
                                                                         )
                                                                 }
@@ -493,7 +486,7 @@ def call() {
                                                     bat(script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv')
                                                     envs = bat(
                                                         label: 'Get tox environments',
-                                                        script: '@.\\venv\\Scripts\\uvx --quiet --constraint=requirements-dev.txt --with tox-uv tox list -d --no-desc',
+                                                        script: '@.\\venv\\Scripts\\uv run --quiet --only-group tox --with tox-uv --frozen tox list -d --no-desc',
                                                         returnStdout: true,
                                                     ).trim().split('\r\n')
                                                 }
@@ -524,7 +517,7 @@ def call() {
                                                                         bat(label: 'Running Tox',
                                                                             script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                                     venv\\Scripts\\uv python install cpython-${version}
-                                                                                    venv\\Scripts\\uvx -p ${version} --constraint=requirements-dev.txt --with tox-uv tox run -e ${toxEnv}
+                                                                                    venv\\Scripts\\uv run --only-group tox --with tox-uv tox run -e ${toxEnv} --runner uv-venv-lock-runner -vv
                                                                                     rmdir /S /Q .tox
                                                                                     rmdir /S /Q venv
                                                                                 """
@@ -576,7 +569,7 @@ def call() {
                                 label: 'Package',
                                 script: '''python3 -m venv venv && venv/bin/pip install --disable-pip-version-check uv
                                            trap "rm -rf venv" EXIT
-                                           venv/bin/uv build --build-constraints=requirements-dev.txt
+                                           venv/bin/uv build
                                         '''
                             )
                         }
@@ -666,7 +659,7 @@ def call() {
                                                                         script: """python3 -m venv venv
                                                                                    ./venv/bin/pip install --disable-pip-version-check uv
                                                                                    ./venv/bin/uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                   ./venv/bin/uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                   ./venv/bin/uv run --only-group tox --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                                 """
                                                                     )
                                                                 }
@@ -682,7 +675,7 @@ def call() {
                                                                         script: """python -m venv venv
                                                                                    .\\venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                                    .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                   .\\venv\\Scripts\\uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                   .\\venv\\Scripts\\uv run --only-group tox --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                                 """
                                                                     )
                                                                 }
@@ -694,7 +687,7 @@ def call() {
                                                                 label: 'Testing with tox',
                                                                 script: """python3 -m venv venv
                                                                            ./venv/bin/pip install --disable-pip-version-check uv
-                                                                           ./venv/bin/uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                           ./venv/bin/uv run --only-group tox --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                         """
                                                             )
                                                         } else {
@@ -703,7 +696,7 @@ def call() {
                                                                 script: """python -m venv venv
                                                                            .\\venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                            .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                           .\\venv\\Scripts\\uvx --constraint=requirements-dev.txt --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                           .\\venv\\Scripts\\uv run --only-group tox --with tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                         """
                                                             )
                                                         }
@@ -779,7 +772,7 @@ def call() {
                                             script: '''python3 -m venv venv
                                                        trap "rm -rf venv" EXIT
                                                        ./venv/bin/pip install --disable-pip-version-check uv
-                                                       UV_INDEX_STRATEGY=unsafe-best-match ./venv/bin/uvx --constraint=requirements-dev.txt twine --installpkg upload --disable-progress-bar --non-interactive dist/*
+                                                       ./venv/bin/uv run --only-group release twine --installpkg upload --disable-progress-bar --non-interactive dist/*
                                                     '''
                                         )
                                 }
