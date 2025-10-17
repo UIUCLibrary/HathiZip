@@ -12,8 +12,13 @@ def getPypiConfig() {
 
 def get_sonarqube_unresolved_issues(report_task_file){
     script{
-
-        def props = readProperties  file: '.scannerwork/report-task.txt'
+        if(! fileExists(report_task_file)){
+            error "Could not find ${report_task_file}"
+        }
+        def props = readProperties  file: report_task_file
+        if(! props['serverUrl'] || ! props['projectKey']){
+            error "Could not find serverUrl or projectKey in ${report_task_file}"
+        }
         def response = httpRequest url : props['serverUrl'] + '/api/issues/search?componentKeys=' + props['projectKey'] + '&resolved=no'
         def outstandingIssues = readJSON text: response.content
         return outstandingIssues
@@ -309,6 +314,7 @@ def call() {
                                         }
                                         environment{
                                             VERSION="${readTOML( file: 'pyproject.toml')['project'].version}"
+                                            SONAR_USER_HOME='/tmp/sonar'
                                         }
                                         when{
                                             allOf{
@@ -328,27 +334,31 @@ def call() {
                                         }
                                         steps{
                                             script{
-                                                withSonarQubeEnv(installationName:'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
-                                                    def sourceInstruction
-                                                    if (env.CHANGE_ID){
-                                                        sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
-                                                    } else{
-                                                        sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
+                                                withSonarQubeEnv(installationName: 'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
+                                                    withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
+                                                        def sourceInstruction
+                                                        if (env.CHANGE_ID){
+                                                            sourceInstruction = '-Dsonar.pullrequest.key=$CHANGE_ID -Dsonar.pullrequest.base=$BRANCH_NAME'
+                                                        } else{
+                                                            sourceInstruction = '-Dsonar.branch.name=$BRANCH_NAME'
+                                                        }
+                                                        sh(
+                                                            label: 'Running Sonar Scanner',
+                                                            script: "./venv/bin/uvx pysonar -t \$token -Dsonar.projectVersion=\$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}"
+                                                        )
                                                     }
-                                                    sh(
-                                                        label: 'Running Sonar Scanner',
-                                                        script: """. ./venv/bin/activate
-                                                                    uvx pysonar-scanner -Dsonar.projectVersion=$VERSION -Dsonar.buildString=\"$BUILD_TAG\" ${sourceInstruction}
-                                                                """
-                                                    )
                                                 }
-                                                timeout(time: 1, unit: 'HOURS') {
-                                                    def sonarqube_result = waitForQualityGate(abortPipeline: false)
-                                                    if (sonarqube_result.status != 'OK') {
-                                                        unstable "SonarQube quality gate: ${sonarqube_result.status}"
+                                                script{
+                                                    timeout(time: 1, unit: 'HOURS') {
+                                                        def sonarqubeResult = waitForQualityGate(abortPipeline: false, credentialsId: params.SONARCLOUD_TOKEN)
+                                                        if (sonarqubeResult.status != 'OK') {
+                                                           unstable "SonarQube quality gate: ${sonarqubeResult.status}"
+                                                       }
+                                                       if(env.BRANCH_IS_PRIMARY){
+                                                           writeJSON file: 'reports/sonar-report.json', json: get_sonarqube_unresolved_issues('.sonar/report-task.txt')
+                                                           recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
+                                                       }
                                                     }
-                                                    def outstandingIssues = get_sonarqube_unresolved_issues('.scannerwork/report-task.txt')
-                                                    writeJSON file: 'reports/sonar-report.json', json: outstandingIssues
                                                 }
                                                 milestone label: 'sonarcloud'
                                             }
