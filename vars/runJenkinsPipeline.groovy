@@ -352,6 +352,7 @@ def call() {
                                         }
                                         steps{
                                             script{
+                                                milestone ordinal: 1, label: 'sonarcloud'
                                                 withSonarQubeEnv(installationName: 'sonarcloud', credentialsId: params.SONARCLOUD_TOKEN) {
                                                     withCredentials([string(credentialsId: params.SONARCLOUD_TOKEN, variable: 'token')]) {
                                                         def sourceInstruction
@@ -378,12 +379,6 @@ def call() {
                                                        }
                                                     }
                                                 }
-                                                milestone label: 'sonarcloud'
-                                            }
-                                        }
-                                        post {
-                                            always{
-                                                recordIssues(tools: [sonarQube(pattern: 'reports/sonar-report.json')])
                                             }
                                         }
                                     }
