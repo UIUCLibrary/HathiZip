@@ -61,6 +61,7 @@ Download = "https://github.com/UIUCLibrary/HathiZip"
 packages = [
     "hathizip",
 ]
+package-dir = {"hathizip" = "src/hathizip"}
 zip-safe = false
 
 [tool.setuptools.package-data]
@@ -87,6 +88,7 @@ build = "*"
 
 [tool.mypy]
 ignore_missing_imports = true
+mypy_path = "src"
 
 [tool.pytest.ini_options]
 addopts = "--verbose"
