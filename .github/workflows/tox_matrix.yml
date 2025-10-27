@@ -48,4 +48,4 @@ jobs:
           script: |
             return "py${{matrix.python-version}}".replace('.','')
       - name: Run tox
-        run: uv run --only-group tox tox -e ${{steps.tox-env.outputs.result}} -vvv
+        run: uv run --only-group tox --with tox-uv tox -e ${{steps.tox-env.outputs.result}} -vvv --runner uv-venv-lock-runner
