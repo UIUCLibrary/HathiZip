@@ -4,9 +4,6 @@ include LICENSE
 # Tox configuration setting
 include tox.ini
 
-# Build scripts
-include make.bat
-
 # README and the files it references
 include README.rst
 
