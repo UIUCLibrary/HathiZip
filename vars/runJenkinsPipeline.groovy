@@ -212,9 +212,7 @@ def call() {
                                                     stage('PyTest'){
                                                         steps{
                                                             sh(label: 'Running pytest',
-                                                                script: '''. ./venv/bin/activate
-                                                                           coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml
-                                                                           '''
+                                                                script: './venv/bin/uv run coverage run --parallel-mode --source=hathizip -m pytest --junitxml=./reports/tests/pytest/pytest-junit.xml'
                                                             )
                                                         }
                                                         post {
@@ -225,18 +223,17 @@ def call() {
                                                         }
                                                     }
                                                     stage('Run Pylint Static Analysis') {
+                                                        environment{
+                                                            PYLINTHOME='/tmp/.cache/pylint'
+                                                        }
                                                         steps{
                                                             catchError(buildResult: 'SUCCESS', message: 'Pylint found issues', stageResult: 'UNSTABLE') {
                                                                 sh(label: 'Running pylint',
-                                                                    script: '''. ./venv/bin/activate
-                                                                               pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt
-                                                                            '''
+                                                                    script: './venv/bin/uv run pylint hathizip -r n --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" > reports/pylint.txt'
                                                                 )
                                                             }
                                                             sh(
-                                                                script: '''. ./venv/bin/activate
-                                                                           pylint hathizip -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt
-                                                                           ''',
+                                                                script: './venv/bin/uv run pylint hathizip -r n --msg-template="{path}:{module}:{line}: [{msg_id}({symbol}), {obj}] {msg}" | tee reports/pylint_issues.txt',
                                                                 label: 'Running pylint for sonarqube',
                                                                 returnStatus: true
                                                             )
@@ -251,9 +248,7 @@ def call() {
                                                     stage('Doctest'){
                                                         steps{
                                                             unstash 'DOCS_ARCHIVE'
-                                                            sh '''. ./venv/bin/activate
-                                                                  coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v
-                                                               '''
+                                                            sh './venv/bin/uv run coverage run --parallel-mode --source=hathizip -m sphinx -b doctest docs/source build/docs -d build/docs/doctrees -v'
                                                         }
                                                         post{
                                                             failure{
@@ -272,9 +267,7 @@ def call() {
                                                             catchError(buildResult: 'SUCCESS', message: 'mypy found some warnings', stageResult: 'UNSTABLE') {
                                                                 tee('logs/mypy.log'){
                                                                     sh(
-                                                                        script: '''. ./venv/bin/activate
-                                                                                   mypy -p hathizip --html-report reports/mypy/mypy_html
-                                                                                '''
+                                                                        script: './venv/bin/uv run mypy -p hathizip --html-report reports/mypy/mypy_html'
                                                                     )
                                                                 }
                                                             }
@@ -290,9 +283,7 @@ def call() {
                                                         steps{
                                                             catchError(buildResult: 'SUCCESS', message: 'flake8 found some warnings', stageResult: 'UNSTABLE') {
                                                                 sh(label: 'Running flake8',
-                                                                   script: '''. ./venv/bin/activate
-                                                                              flake8 hathizip --tee --output-file=logs/flake8.log
-                                                                           '''
+                                                                   script: './venv/bin/uv run flake8 src --tee --output-file=logs/flake8.log'
                                                                 )
                                                             }
                                                         }
@@ -316,10 +307,9 @@ def call() {
                                         post{
                                             always{
                                                 sh(label: 'combining coverage data',
-                                                   script: '''. ./venv/bin/activate
-                                                              coverage combine
-                                                              coverage xml -o ./reports/coverage.xml
-                                                              '''
+                                                   script: '''./venv/bin/uv run coverage combine
+                                                              ./venv/bin/uv run coverage xml -o ./reports/coverage.xml
+                                                           '''
                                                 )
                                                 stash(includes: 'reports/coverage*.xml', name: 'COVERAGE_REPORT_DATA')
                                                 recordCoverage(tools: [[parser: 'COBERTURA', pattern: 'reports/coverage.xml']])
@@ -467,10 +457,7 @@ def call() {
                                                                     }
                                                                 }
                                                             } catch(e) {
-                                                                sh(script: '''. ./venv/bin/activate
-                                                                      uv python list
-                                                                      '''
-                                                                        )
+                                                                sh(script: '. ./venv/bin/uv python list')
                                                                 throw e
                                                             } finally{
                                                                 sh "${tool(name: 'Default', type: 'git')} clean -dfx"

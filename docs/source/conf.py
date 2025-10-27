@@ -22,7 +22,7 @@ import sys
 import tomllib
 import re
 
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('../../src'))
 
 
 def get_project_metadata():
