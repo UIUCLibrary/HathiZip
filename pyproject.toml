@@ -36,7 +36,7 @@ ci = [
 [project]
 name = "HathiZip"
 version = "0.1.12.dev0"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.rst"
 license = "NCSA"
 license-files = ["LICENSE"]
@@ -48,7 +48,7 @@ maintainers = [
 ]
 description = "Creates .zip file packages for HathiTrust. Replacement script for HathiTrust Zip and Submit."
 classifiers = [
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Topic :: System :: Archiving :: Packaging",
     "Topic :: System :: Archiving :: Compression",
 ]
