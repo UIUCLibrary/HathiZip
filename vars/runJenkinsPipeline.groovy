@@ -101,6 +101,7 @@ def call() {
                             UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
                             UV_CACHE_DIR='/tmp/uvcache'
                             UV_CONFIG_FILE=createUVConfig()
+                            UV_FROZEN='1'
                         }
                         options {
                             retry(conditions: [agent()], count: 3)
