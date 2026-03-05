@@ -92,7 +92,7 @@ def call() {
                             docker{
                                 image 'ghcr.io/astral-sh/uv:debian'
                                 label 'docker && linux'
-                                args '--mount source=python-tmp-hathizip,target=/tmp --mount type=tmpfs,dst=/.config --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv'
+                                args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv'
                             }
                         }
                         environment{
@@ -167,7 +167,7 @@ def call() {
                                     docker{
                                         image 'ghcr.io/astral-sh/uv:debian'
                                         label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-                                        args '--mount source=python-tmp-hathizip,target=/tmp'
+                                        args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec'
                                     }
                                 }
                                 stages{
