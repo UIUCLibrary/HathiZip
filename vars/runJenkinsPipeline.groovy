@@ -286,7 +286,7 @@ def call() {
                                                     }
                                                     stage('Audit Lockfile Dependencies'){
                                                         steps{
-                                                            catchError(buildResult: 'SUCCESS', message: 'uv-secure found issues', stageResult: 'UNSTABLE') {
+                                                            catchError(buildResult: 'UNSTABLE', message: 'uv-secure found issues', stageResult: 'UNSTABLE') {
                                                                 sh 'uvx uv-secure --cache-path=/tmp/cache/uv-secure uv.lock'
                                                             }
                                                         }
