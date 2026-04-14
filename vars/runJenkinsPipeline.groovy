@@ -92,7 +92,7 @@ def call() {
                             docker{
                                 image 'ghcr.io/astral-sh/uv:debian'
                                 label 'docker && linux'
-                                args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec --tmpfs /tmp_data:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv'
+                                args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec --tmpfs /tmp_data:exec --tmpfs /.tree-sitter:exec -e UV_PROJECT_ENVIRONMENT=/tmp_data/.venv'
                             }
                         }
                         environment{
@@ -286,8 +286,8 @@ def call() {
                                                     }
                                                     stage('Audit Lockfile Dependencies'){
                                                         steps{
-                                                            catchError(buildResult: 'SUCCESS', message: 'uv-secure found issues', stageResult: 'UNSTABLE') {
-                                                                sh 'uvx uv-secure --cache-path=/tmp/cache/uv-secure uv.lock'
+                                                            catchError(buildResult: 'UNSTABLE', message: 'uv-secure found issues', stageResult: 'UNSTABLE') {
+                                                                sh 'uv run uv-secure --cache-path=/tmp/cache/uv-secure uv.lock'
                                                             }
                                                         }
                                                     }
