@@ -165,7 +165,7 @@ def call() {
                                     docker{
                                         image 'ghcr.io/astral-sh/uv:debian'
                                         label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-                                        args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec'
+                                        args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec --tmpfs /.tree-sitter:exec'
                                     }
                                 }
                                 stages{
