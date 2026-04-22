@@ -132,8 +132,6 @@ def call() {
                                             zip archive: true, dir: 'build/docs/html', glob: '', zipFile: "dist/${props.name}-${props.version}.doc.zip"
                                         }
                                         stash includes: 'dist/*.doc.zip,build/docs/html/**', name: 'DOCS_ARCHIVE'
-                                    }
-                                    success{
                                         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'build/docs/html', reportFiles: 'index.html', reportName: 'Documentation', reportTitles: ''])
                                     }
                                     cleanup{
@@ -167,7 +165,7 @@ def call() {
                                     docker{
                                         image 'ghcr.io/astral-sh/uv:debian'
                                         label 'docker && linux && x86_64' // needed for pysonar-scanner which is x86_64 only as of 0.2.0.520
-                                        args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec'
+                                        args '--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.config:exec --tmpfs /.tree-sitter:exec'
                                     }
                                 }
                                 stages{
@@ -566,12 +564,10 @@ def call() {
                                 label: 'Package',
                                 script: 'uv build'
                             )
+                            archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
+                            stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'PYTHON_PACKAGES'
                         }
                         post{
-                            success{
-                                archiveArtifacts artifacts: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', fingerprint: true
-                                stash includes: 'dist/*.whl,dist/*.tar.gz,dist/*.zip', name: 'PYTHON_PACKAGES'
-                            }
                             cleanup{
                                 cleanWs(
                                     deleteDirs: true,
