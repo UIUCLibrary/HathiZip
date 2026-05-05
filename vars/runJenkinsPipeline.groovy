@@ -436,7 +436,7 @@ def call() {
                                                                         docker.image('ghcr.io/astral-sh/uv:debian').inside('--mount source=python-tmp-hathizip,target=/tmp --tmpfs /.local/bin:exec --tmpfs /tox_workdir:exec -e TOX_WORK_DIR=/tox_workdir/.tox -e UV_PROJECT_ENVIRONMENT=/tox_workdir/.venv'){
                                                                             sh( label: 'Running Tox',
                                                                                 script: """uv python install cpython-${version}
-                                                                                           uv run --only-group=tox-uv tox run --runner uv-venv-lock-runner -e ${toxEnv} -vv
+                                                                                           uv run --frozen --only-group=tox-uv tox run --runner uv-venv-lock-runner -e ${toxEnv} -vv
                                                                                         """
                                                                                 )
                                                                         }
@@ -512,12 +512,11 @@ def call() {
                                                                                     script: 'python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv'
                                                                                 )
                                                                                 bat(label: 'Running Tox',
-                                                                                    script: """python -m venv venv && venv\\Scripts\\pip install --disable-pip-version-check uv
-                                                                                            venv\\Scripts\\uv python install cpython-${version}
-                                                                                            venv\\Scripts\\uv run --only-group=tox-uv tox run -e ${toxEnv} --runner uv-venv-lock-runner -vv
-                                                                                            rmdir /S /Q .tox
-                                                                                            rmdir /S /Q venv
-                                                                                        """
+                                                                                    script: """venv\\Scripts\\uv python install cpython-${version}
+                                                                                               venv\\Scripts\\uv run --frozen --only-group=tox-uv tox run -e ${toxEnv} --runner uv-venv-lock-runner -vv
+                                                                                               rmdir /S /Q .tox
+                                                                                               rmdir /S /Q venv
+                                                                                            """
                                                                                 )
                                                                             }
                                                                         }
@@ -647,7 +646,7 @@ def call() {
                                                                 ]){
                                                                     sh(
                                                                         label: 'Testing with tox',
-                                                                        script: "uv run --python ${entry.PYTHON_VERSION} --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
+                                                                        script: "uv run --frozen --python ${entry.PYTHON_VERSION} --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}"
                                                                     )
                                                                 }
                                                              } else {
@@ -663,7 +662,7 @@ def call() {
                                                                         script: """python -m venv venv
                                                                                    .\\venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                                    .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                                   .\\venv\\Scripts\\uv run --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                                   .\\venv\\Scripts\\uv run --frozen  --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                                 """
                                                                     )
                                                                 }
@@ -675,7 +674,7 @@ def call() {
                                                                 label: 'Testing with tox',
                                                                 script: """python3 -m venv venv
                                                                            ./venv/bin/pip install --disable-pip-version-check uv
-                                                                           TOX_UV_PATH=${WORKSPACE}/venv/bin/uv ./venv/bin/uv run --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                           TOX_UV_PATH=${WORKSPACE}/venv/bin/uv ./venv/bin/uv run --frozen --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                         """
                                                             )
                                                         } else {
@@ -684,7 +683,7 @@ def call() {
                                                                 script: """python -m venv venv
                                                                            .\\venv\\Scripts\\pip install --disable-pip-version-check uv
                                                                            .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                           .\\venv\\Scripts\\uv run --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
+                                                                           .\\venv\\Scripts\\uv run --frozen --only-group=tox-uv tox --installpkg ${findFiles(glob: entry.PACKAGE_TYPE == 'wheel' ? 'dist/*.whl' : 'dist/*.tar.gz')[0].path} -e py${entry.PYTHON_VERSION.replace('.', '')}
                                                                         """
                                                             )
                                                         }
