@@ -429,7 +429,7 @@ def call() {
                                                     "Tox Environment: ${toxEnv}",
                                                     {
                                                         node('docker && linux'){
-                                                            timeout(10){
+                                                            timeout(30){
                                                                 checkout scm
                                                                 try{
                                                                     withEnv(["UV_CONFIG_FILE=${createUVConfig()}"]){
@@ -496,7 +496,7 @@ def call() {
                                                     "Tox Environment: ${toxEnv}",
                                                     {
                                                         node('docker && windows'){
-                                                            timeout(10){
+                                                            timeout(30){
                                                                 checkout scm
                                                                 retry(3){
                                                                     try{
