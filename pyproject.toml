@@ -3,7 +3,6 @@ requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
-audit-dependencies = ['uv-secure']
 docs = ["sphinx"]
 type_checking = [
     "mypy",
@@ -22,12 +21,11 @@ tox-uv = [
     {include-group = "tox"}
 ]
 test = [
-    "coverage[toml]",
     "pytest",
     {include-group = "tox"},
 ]
 dev = [
-    {include-group = "audit-dependencies"},
+    "coverage[toml]",
     {include-group = "docs"},
     {include-group = "lint"},
     {include-group = "test"},
