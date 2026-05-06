@@ -568,7 +568,6 @@ release = [
     { name = "twine" },
 ]
 test = [
-    { name = "coverage", extra = ["toml"] },
     { name = "pytest" },
     { name = "tox" },
 ]
@@ -627,7 +626,6 @@ lint = [
 ]
 release = [{ name = "twine" }]
 test = [
-    { name = "coverage", extras = ["toml"] },
     { name = "pytest" },
     { name = "tox" },
 ]
