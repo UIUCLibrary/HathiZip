@@ -74,6 +74,9 @@ def call() {
             booleanParam(name: 'DEPLOY_PYPI', defaultValue: false, description: 'Deploy to pypi')
             booleanParam(name: 'DEPLOY_DOCS', defaultValue: false, description: 'Update online documentation')
         }
+        options {
+            durabilityHint 'PERFORMANCE_OPTIMIZED'
+        }
         stages {
             stage('Building and Testing'){
                 when{
@@ -205,7 +208,6 @@ def call() {
                                                         }
                                                         post {
                                                             always{
-                                                                stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
                                                                 junit 'reports/tests/pytest/pytest-junit.xml'
                                                             }
                                                         }
@@ -229,7 +231,6 @@ def call() {
                                                         post{
                                                             always{
                                                                 recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                                stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
                                                             }
                                                         }
                                                     }
@@ -389,9 +390,6 @@ def call() {
                         when{
                             equals expected: true, actual: params.TEST_RUN_TOX
                             beforeOptions true
-                        }
-                        options {
-                            lock(env.JOB_URL)
                         }
                         parallel{
                             stage('Linux'){
@@ -671,10 +669,22 @@ def call() {
                                                                     "UV_CONFIG_FILE=${createUVConfig()}",
                                                                     "TOX_UV_PATH=${WORKSPACE}\\venv\\Scripts\\uv.exe",
                                                                 ]){
-                                                                    bat """python -m venv venv
-                                                                           .\\venv\\Scripts\\pip install --disable-pip-version-check uv
-                                                                           .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                        """
+                                                                    retry(2){
+                                                                        try{
+                                                                            bat """python -m venv venv
+                                                                                   .\\venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                                   .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
+                                                                                """
+                                                                        }catch(e){
+                                                                            cleanWs(
+                                                                                deleteDirs: true,
+                                                                                patterns: [
+                                                                                        [pattern: 'venv/', type: 'INCLUDE']
+                                                                                    ]
+                                                                            )
+                                                                            throw e
+                                                                        }
+                                                                    }
                                                                     def attempt = 0
                                                                     retry(2){
                                                                         attempt += 1
