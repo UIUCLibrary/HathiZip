@@ -388,9 +388,6 @@ def call() {
                             equals expected: true, actual: params.TEST_RUN_TOX
                             beforeOptions true
                         }
-                        options {
-                            lock(env.JOB_URL)
-                        }
                         parallel{
                             stage('Linux'){
                                 when{
