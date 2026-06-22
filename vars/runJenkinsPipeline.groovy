@@ -671,10 +671,22 @@ def call() {
                                                                     "UV_CONFIG_FILE=${createUVConfig()}",
                                                                     "TOX_UV_PATH=${WORKSPACE}\\venv\\Scripts\\uv.exe",
                                                                 ]){
-                                                                    bat """python -m venv venv
-                                                                           .\\venv\\Scripts\\pip install --disable-pip-version-check uv
-                                                                           .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
-                                                                        """
+                                                                    retry(2){
+                                                                        try{
+                                                                            bat """python -m venv venv
+                                                                                   .\\venv\\Scripts\\pip install --disable-pip-version-check uv
+                                                                                   .\\venv\\Scripts\\uv python install cpython-${entry.PYTHON_VERSION}
+                                                                                """
+                                                                        }catch(e){
+                                                                            cleanWs(
+                                                                                deleteDirs: true,
+                                                                                patterns: [
+                                                                                        [pattern: 'venv/', type: 'INCLUDE']
+                                                                                    ]
+                                                                            )
+                                                                            throw e
+                                                                        }
+                                                                    }
                                                                     def attempt = 0
                                                                     retry(2){
                                                                         attempt += 1
