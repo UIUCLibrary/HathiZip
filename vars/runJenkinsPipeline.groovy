@@ -205,7 +205,6 @@ def call() {
                                                         }
                                                         post {
                                                             always{
-                                                                stash includes: 'reports/tests/pytest/*.xml', name: 'PYTEST_UNIT_TEST_RESULTS'
                                                                 junit 'reports/tests/pytest/pytest-junit.xml'
                                                             }
                                                         }
@@ -229,7 +228,6 @@ def call() {
                                                         post{
                                                             always{
                                                                 recordIssues(tools: [pyLint(pattern: 'reports/pylint.txt')])
-                                                                stash includes: 'reports/pylint_issues.txt,reports/pylint.txt', name: 'PYLINT_REPORT'
                                                             }
                                                         }
                                                     }
