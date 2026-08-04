@@ -19,7 +19,10 @@
 #
 import os
 import sys
-import tomllib
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 import re
 
 sys.path.insert(0, os.path.abspath('../../src'))
