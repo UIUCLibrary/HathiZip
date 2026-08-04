@@ -446,6 +446,8 @@ ci = [
     { name = "pytest" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tomli", version = "2.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tomli", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "tox" },
     { name = "twine" },
 ]
@@ -460,11 +462,15 @@ dev = [
     { name = "pytest" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tomli", version = "2.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tomli", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "tox" },
 ]
 docs = [
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tomli", version = "2.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "tomli", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
 ]
 lint = [
     { name = "bandit" },
@@ -507,6 +513,7 @@ ci = [
     { name = "pysonar" },
     { name = "pytest" },
     { name = "sphinx" },
+    { name = "tomli", marker = "python_full_version >= '3.10'" },
     { name = "tox" },
     { name = "twine" },
 ]
@@ -520,9 +527,13 @@ dev = [
     { name = "pylint" },
     { name = "pytest" },
     { name = "sphinx" },
+    { name = "tomli", marker = "python_full_version >= '3.10'" },
     { name = "tox" },
 ]
-docs = [{ name = "sphinx" }]
+docs = [
+    { name = "sphinx" },
+    { name = "tomli", marker = "python_full_version >= '3.10'" },
+]
 lint = [
     { name = "bandit" },
     { name = "flake8" },
