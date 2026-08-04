@@ -160,6 +160,7 @@ def call() {
                                     UV_PYTHON_INSTALL_DIR='/tmp/uvpython'
                                     UV_CACHE_DIR='/tmp/uvcache'
                                     UV_CONFIG_FILE=createUVConfig()
+                                    UV_PYTHON='3+gil'
                                 }
                                 agent {
                                     docker{
